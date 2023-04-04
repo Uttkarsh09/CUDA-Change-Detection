@@ -1,5 +1,6 @@
 #include<iostream>
 #include "misc.h"
+#include "FreeImage.h"
 
 __global__ void add(int a, int b, int *c){
 	*c = a + b;
@@ -15,7 +16,7 @@ int main(){
 	for(int i=0 ; i<deviceCount ; i++){
 		cudaGetDeviceProperties(&deviceProperties, i);
 		printMachineInformation(deviceProperties);
-		printf(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n");
+		printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n");
 	}
 
 

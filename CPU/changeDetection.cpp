@@ -9,24 +9,23 @@ struct RGB_TO_GREYSCALE{
 };
 
 typedef struct Image_Metadata{
-	int width;
-	int height;
-	int bpp; // ? Bits Per Pixel
-	unsigned int memorySize;	// ? -> values can be a standard approximation, may vary between using different C++ standard libs
-	string address;
-	FREE_IMAGE_FORMAT imageFormat;
+	int width=-1;
+	int height=-1;
+	int bpp=-1; // ? Bits Per Pixel
+	unsigned int memorySize = 0;					// ? -> values can be a standard approximation, may vary between using different C++ standard libs
+	string address = "unknown";
+	FREE_IMAGE_FORMAT imageFormat = FIF_UNKNOWN;
 	FIBITMAP *dib;
-	FREE_IMAGE_COLOR_TYPE colorType; // ? One of -> FIC_MINISWHITE-0 | FIC_MINISBLACK-1 | FIC_RGB-2 | FIC_PALETTE-3 | FIC_RGBALPHA-4 | FIC_CMYK-5	
-
-	// void copyImageMetadata(struct Image_Metadata img, string address){
-	// 	this->width = img.width;
-	// 	FreeImage_GetWidth
-	// 	this->height = img.height;
-	// 	this->bpp = FreeImage_GetBPP(this->dib);
-	// 	this->address = address;
-	// 	this->imageFormat = FreeImage_GetFileType(this->address.c_str(), 0);
-	// }
+	FREE_IMAGE_COLOR_TYPE colorType; 				// ? One of -> FIC_MINISWHITE-0 | FIC_MINISBLACK-1 | FIC_RGB-2 | FIC_PALETTE-3 | FIC_RGBALPHA-4 | FIC_CMYK-5	
 } IMAGE_DATA;
+
+string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
+FIBITMAP* ImageFormatIndependentLoader(const char*, int);
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT, const char*);
+void printImageData(IMAGE_DATA);
+string mapIDToImageFormatName(FREE_IMAGE_FORMAT);
+string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
+void populateImageData(IMAGE_DATA*);
 
 
 // * lpsz -> Long pointer to Null Terminated String
@@ -52,7 +51,7 @@ FIBITMAP* ImageFormatIndependentLoader(const char* lpszPathName, int flag){
 }
 
 
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message){
 	cout << endl << "***";
 	if(fif != FIF_UNKNOWN) {
 		printf("%s Format\n", FreeImage_GetFormatFromFIF(fif));
@@ -62,63 +61,9 @@ void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
 }
 
 
-void populateImageMetadata(IMAGE_DATA *imgData){
-	imgData->width = FreeImage_GetWidth(imgData->dib);
-	imgData->height = FreeImage_GetHeight(imgData->dib);
- 	imgData->bpp = FreeImage_GetBPP(imgData->dib);
-	if(!imgData->address.compare("")){
-		cout << "No address provided, can't get FIF";
-		exit(1);
-	}
-	imgData->imageFormat = FreeImage_GetFileType(imgData->address.c_str(), 0);
-	imgData->memorySize = FreeImage_GetMemorySize(imgData->dib);	
-	imgData->colorType = FreeImage_GetColorType(imgData->dib); 
-}
-
-
 string mapIDToImageFormatName(FREE_IMAGE_FORMAT id){
-	switch (id)
-	{
-		case 0: return "FIF_BMP";
-		case 1: return "FIF_ICO";
-		case 2: return "FIF_JPEG";
-		case 3: return "FIF_JNG";
-		case 4: return "FIF_KOALA";
-		case 5: return "FIF_LBM or FIF_IFF";
-		case 6: return "FIF_MNG";
-		case 7: return "FIF_PBM";
-		case 8: return "FIF_PBMRAW";
-		case 9: return "FIF_PCD";
-		case 10: return "FIF_PCX";
-		case 11: return "FIF_PGM";
-		case 12: return "FIF_PGMRAW";
-		case 13: return "FIF_PNG";
-		case 14: return "FIF_PPM";
-		case 15: return "FIF_PPMRAW";
-		case 16: return "FIF_RAS";
-		case 17: return "FIF_TARGA";
-		case 18: return "FIF_TIFF";
-		case 19: return "FIF_WBMP";
-		case 20: return "FIF_PSD";
-		case 21: return "FIF_CUT";
-		case 22: return "FIF_XBM";
-		case 23: return "FIF_XPM";
-		case 24: return "FIF_DDS";
-		case 25: return "FIF_GIF";
-		case 26: return "FIF_HDR";
-		case 27: return "FIF_FAXG3";
-		case 28: return "FIF_SGI";
-		case 29: return "FIF_EXR";
-		case 30: return "FIF_J2K";
-		case 31: return "FIF_JP2";
-		case 32: return "FIF_PFM";
-		case 33: return "FIF_PICT";
-		case 34: return "FIF_RAW";
-		case 35: return "FIF_WEBP";
-		case 36: return "FIF_JXR";
-	default:
-		return "FIF_UNKNOWN";
-	}
+	string fif = FreeImage_GetFormatFromFIF(id);
+	return (fif == "") ? "!!! FIF_UNKNOWN !!!" : fif;
 }
 
 
@@ -139,70 +84,80 @@ void printImageData(IMAGE_DATA img){
 	cout << "Address \t= " << img.address << endl;
 	cout << "Resolution \t= " << img.width << "x" << img.height << endl;
 	cout << "Bits Per Pixel \t= " << img.bpp << endl;
-	cout << "ImageFormat \t= " << img.imageFormat << " -> " << FreeImage_GetFormatFromFIF(img.imageFormat) << endl;
-	cout << "MemorySize \t= " << img.memorySize << endl;
-	cout << "ColorType \t= " << img.colorType << " -> " << mapIDToColorTypeName(img.colorType) << endl;
+	cout << "Memory Size \t= " << img.memorySize << endl;
+	cout << "Color Type \t= " << img.colorType << " -> " << mapIDToColorTypeName(img.colorType) << endl;
+	cout << "Image Format \t= " << img.imageFormat << " -> " << mapIDToImageFormatName(img.imageFormat) << endl;
 	cout << endl;
+}
+
+
+void saveImage(IMAGE_DATA imgData, string address=""){
+	if(address == "")
+	imgData.address = address;
+	bool saved = FreeImage_Save(imgData.imageFormat, imgData.dib, imgData.address.c_str(), 0);
+	if(!saved){
+		cout << endl << "~~~~~~~~~~" << endl;
+		perror("Can't save the file");
+		cout << endl << "~~~~~~~~~~" << endl;
+		exit(1);
+	} 
+	
+	cout << "Image Saved Successfully at " << imgData.address << endl;
+}
+
+
+void populateImageData(IMAGE_DATA *imgData){
+	imgData->width = FreeImage_GetWidth(imgData->dib);
+	imgData->height = FreeImage_GetHeight(imgData->dib);
+ 	imgData->bpp = FreeImage_GetBPP(imgData->dib);
+	imgData->memorySize = FreeImage_GetMemorySize(imgData->dib);	
+	imgData->colorType = FreeImage_GetColorType(imgData->dib); 
+
+	imgData->imageFormat = FreeImage_GetFileType(imgData->address.c_str(), 0);
+
+	if(imgData->imageFormat == FIF_UNKNOWN){
+		imgData->imageFormat = FreeImage_GetFIFFromFilename(imgData->address.c_str());
+	
+		if(imgData->imageFormat == FIF_UNKNOWN){
+			cout << "Can't get FIF (Free Image Format)";
+			exit(1);
+		}
+	}
 }
 
 int main(){
 	FreeImage_Initialise();
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 	
-	IMAGE_DATA oldImage, newImage;
+	IMAGE_DATA oldImage, newImage, oldGrayImage, newGrayImage;
 	oldImage.address = "./images/old1.png";
 	newImage.address = "./images/new1.png";
-
 
 	oldImage.dib = ImageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = ImageFormatIndependentLoader(newImage.address.c_str(), 0);
 	
-	populateImageMetadata(&oldImage);
-	populateImageMetadata(&newImage);
+	populateImageData(&oldImage);
+	populateImageData(&newImage);
+
 	printImageData(oldImage);
 	printImageData(newImage);
-
-	IMAGE_DATA oldGrayImage, newGrayImage;
-	oldGrayImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
-	newGrayImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
-	oldGrayImage.address = "./images/oldGray.png";
-	newGrayImage.address = "./images/newGray.png";
-
-	cout<<"HERE"<<endl;
 	
-	populateImageMetadata(&oldGrayImage);
-	populateImageMetadata(&newGrayImage);
-
+	oldGrayImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
+	oldGrayImage.address = "./images/oldGray.png";
+	populateImageData(&oldGrayImage);
+	saveImage(oldGrayImage, oldGrayImage.address);
 	printImageData(oldGrayImage);
+
+	newGrayImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
+	newGrayImage.address = "./images/newGray.png";
+	populateImageData(&newGrayImage);
+	saveImage(newGrayImage, newGrayImage.address);
 	printImageData(newGrayImage);
 
-	if(FreeImage_Save(oldGrayImage.imageFormat, oldGrayImage.dib, oldGrayImage.address.c_str(), 0)){
-		cout << "Image Saved Successfully" << endl;
-	}
-	else {
-		char err[500];
-        sprintf(err, "Can't save the file");
-		printf("\n~~~~~~~~~~\n");
-        perror(err);
-		printf("~~~~~~~~~~\n");
-        exit(1);
-	}
-
-	if(FreeImage_Save(newGrayImage.imageFormat, newGrayImage.dib, newGrayImage.address.c_str(), 0)){
-		cout << "Saved successfull at " << newGrayImage.address << endl;
-	}
-	else {
-		char err[500];
-        sprintf(err, "Can't save the file");
-		printf("~~~~~~~~~~\n");
-        perror(err);
-		printf("~~~~~~~~~~\n");
-        exit(1);
-	}
-	
-
-
 	FreeImage_Unload(oldImage.dib);
+	FreeImage_Unload(newImage.dib);
+	FreeImage_Unload(oldGrayImage.dib);
+	FreeImage_Unload(newGrayImage.dib);
 	FreeImage_DeInitialise();
 	return 0;
 }

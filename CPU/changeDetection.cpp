@@ -1,6 +1,9 @@
 #include<iostream>
 #include<FreeImage.h>
 #include<string>
+#include<assert.h>
+
+#define DIFFERENCE_THRESHOLD 60
 
 using namespace std;
 
@@ -92,9 +95,11 @@ void printImageData(IMAGE_DATA img){
 
 
 void saveImage(IMAGE_DATA imgData, string address=""){
-	if(address == "")
-	imgData.address = address;
-	bool saved = FreeImage_Save(imgData.imageFormat, imgData.dib, imgData.address.c_str(), 0);
+	if(address == "")	// ? else assuing address is given to imgData
+		address = imgData.address;
+
+	bool saved = FreeImage_Save(imgData.imageFormat, imgData.dib, address.c_str(), 0);
+
 	if(!saved){
 		cout << endl << "~~~~~~~~~~" << endl;
 		perror("Can't save the file");
@@ -125,35 +130,144 @@ void populateImageData(IMAGE_DATA *imgData){
 	}
 }
 
+// ! THIS ONLY SUPPORTS DETECTION FOR FIC_MINISBLACK TYPE IMAGES - Doing this deliberately
+FIBITMAP* detectChanges(IMAGE_DATA img1, IMAGE_DATA img2){
+	if((img1.colorType != FIC_MINISBLACK) || (img2.colorType != FIC_MINISBLACK)){
+		cout << "ERROR: Color type of the images is not FIC_MINISBLACK" << endl;
+		exit(1);
+	}
+
+	if(img1.bpp != img2.bpp){
+		cout << "ERROR: Bits Per Pixel are different for the images can't compare the changes";
+		exit(1);
+	}
+
+	if((img1.height != img2.height) || (img1.width != img2.width)){
+		cout << "ERROR: Resolution of the images are not equal, pass images with same resolution" << endl;
+		cout << "Img1 -> " << img1.width << " x " << img1.height << endl;
+		cout << "Img2 -> " << img2.width << " x " << img2.height << endl;
+		exit(1);
+	}
+
+	FIBITMAP *differenceBitmap = FreeImage_Allocate(img1.width, img1.height, img1.bpp);
+	BYTE img1Pixel, img2Pixel, difference;
+
+
+	for(int y=0 ; y<img1.height ; y++){
+		for(int x=0 ; x<img1.width; x++){
+			assert(FreeImage_GetPixelIndex(img1.dib, x, y, &img1Pixel));
+			assert(FreeImage_GetPixelIndex(img2.dib, x, y, &img2Pixel));
+			difference = abs(img1Pixel - img2Pixel);
+
+			if((int)difference != 0){
+				// cout << (int)difference << "\t";
+			}
+			FreeImage_SetPixelIndex(differenceBitmap, x, y, &difference);
+		}
+	}
+
+	return differenceBitmap;
+}
+
+
+void copyImage(IMAGE_DATA *targetImage, IMAGE_DATA *sourceImage, string targetImageAddress=""){
+	if(targetImageAddress == ""){
+		// ? below line is to add "_copy" after the image name
+		targetImage->address = sourceImage->address.substr(0, sourceImage->address.find_last_of(".")) + "_copy" + sourceImage->address.substr(sourceImage->address.find_last_of("."));
+	}
+	else {
+		targetImage->address = targetImageAddress;
+	}
+
+	targetImage->bpp = sourceImage->bpp;
+	targetImage->colorType = sourceImage->colorType;
+	targetImage->dib = sourceImage->dib;
+	targetImage->height = sourceImage->height;
+	targetImage->width = sourceImage->width;
+	targetImage->imageFormat = sourceImage->imageFormat;
+}
+
+
+void highlightChangesInImage(IMAGE_DATA *img, FIBITMAP *differenceBitmap){
+	assert(FreeImage_GetBPP(differenceBitmap) == 8);
+	assert(img->colorType == FIC_RGB);
+	assert(img->height == FreeImage_GetHeight(differenceBitmap));
+	assert(img->width == FreeImage_GetWidth(differenceBitmap));
+
+	RGBQUAD color;
+
+	for(int y=0 ; y<img->height ; y++){
+		for(int x=0 ; x<img->width; x++){
+			FreeImage_GetPixelIndex(differenceBitmap, x, y, &color.rgbRed);
+			if(color.rgbRed >= DIFFERENCE_THRESHOLD){
+				color.rgbRed = 255;
+				color.rgbBlue = 0;
+				color.rgbGreen = 0;
+				FreeImage_SetPixelColor(img->dib, x, y, &color);
+			}
+		}
+	}
+}
+
+void convertToRGBGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg){
+	assert(greyscaleImg->bpp == 8);
+	assert((greyscaleImg->colorType == FIC_MINISBLACK) || (greyscaleImg->colorType == FIC_MINISWHITE));
+	BYTE bits;
+	RGBQUAD color;
+	
+	for(int y=0 ; y<img->height ; y++){
+		for(int x=0 ; x<img->width ; x++){
+			FreeImage_GetPixelIndex(greyscaleImg->dib, x, y, &bits);
+			color.rgbRed = bits;
+			color.rgbGreen = bits;
+			color.rgbBlue = bits;
+			FreeImage_SetPixelColor(img->dib, x, y, &color);
+		}
+	}
+}
+
+
 int main(){
 	FreeImage_Initialise();
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 	
 	IMAGE_DATA oldImage, newImage, oldGrayImage, newGrayImage;
-	oldImage.address = "./images/old1.png";
-	newImage.address = "./images/new1.png";
+	oldImage.address = "./images/old.png";
+	newImage.address = "./images/new.png";
 
 	oldImage.dib = ImageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = ImageFormatIndependentLoader(newImage.address.c_str(), 0);
 	
 	populateImageData(&oldImage);
 	populateImageData(&newImage);
-
 	printImageData(oldImage);
 	printImageData(newImage);
 	
 	oldGrayImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
 	oldGrayImage.address = "./images/oldGray.png";
 	populateImageData(&oldGrayImage);
-	saveImage(oldGrayImage, oldGrayImage.address);
+	saveImage(oldGrayImage);
 	printImageData(oldGrayImage);
 
 	newGrayImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
 	newGrayImage.address = "./images/newGray.png";
 	populateImageData(&newGrayImage);
-	saveImage(newGrayImage, newGrayImage.address);
-	printImageData(newGrayImage);
+	saveImage(newGrayImage);
+	printImageData(oldGrayImage);	
 
+
+	IMAGE_DATA highlightedChanges;
+	copyImage(&highlightedChanges, &oldImage);
+	highlightedChanges.address = "./images/highlightedChanges.png";
+	
+	convertToRGBGreyscale(&highlightedChanges, &oldGrayImage);
+
+	FIBITMAP *differences = detectChanges(oldGrayImage, newGrayImage);
+	highlightChangesInImage(&highlightedChanges, differences);
+	saveImage(highlightedChanges);
+
+
+	
 	FreeImage_Unload(oldImage.dib);
 	FreeImage_Unload(newImage.dib);
 	FreeImage_Unload(oldGrayImage.dib);
@@ -161,3 +275,14 @@ int main(){
 	FreeImage_DeInitialise();
 	return 0;
 }
+
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// TODOs
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// 1. Pass pointers to functions wherever possible
+// 2. 
+// 
+// 
+// 

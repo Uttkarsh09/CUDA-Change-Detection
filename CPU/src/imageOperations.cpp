@@ -1,35 +1,11 @@
-#include<iostream>
 #include<FreeImage.h>
-#include<string>
+#include<iostream>
 #include<assert.h>
+#include"../include/datatypes.hpp"
 
 #define DIFFERENCE_THRESHOLD 60
 
 using namespace std;
-
-struct RGB_TO_GREYSCALE{
-	float red = 0.3, green = 0.59, blue = 0.11;
-};
-
-typedef struct Image_Metadata{
-	int width=-1;
-	int height=-1;
-	int bpp=-1; // ? Bits Per Pixel
-	unsigned int memorySize = 0;					// ? -> values can be a standard approximation, may vary between using different C++ standard libs
-	string address = "unknown";
-	FREE_IMAGE_FORMAT imageFormat = FIF_UNKNOWN;
-	FIBITMAP *dib;
-	FREE_IMAGE_COLOR_TYPE colorType; 				// ? One of -> FIC_MINISWHITE-0 | FIC_MINISBLACK-1 | FIC_RGB-2 | FIC_PALETTE-3 | FIC_RGBALPHA-4 | FIC_CMYK-5	
-} IMAGE_DATA;
-
-string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
-FIBITMAP* ImageFormatIndependentLoader(const char*, int);
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT, const char*);
-void printImageData(IMAGE_DATA);
-string mapIDToImageFormatName(FREE_IMAGE_FORMAT);
-string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
-void populateImageData(IMAGE_DATA*);
-
 
 // * lpsz -> Long pointer to Null Terminated String
 // * dib -> device independent bitmap
@@ -51,16 +27,6 @@ FIBITMAP* ImageFormatIndependentLoader(const char* lpszPathName, int flag){
 	// ? fif == FIF_UNKNOWN, so we terminate
 	cout << "ERROR -> FILE IMAGE FORMAT UNKNOWN";
 	exit(1);
-}
-
-
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message){
-	cout << endl << "***";
-	if(fif != FIF_UNKNOWN) {
-		printf("%s Format\n", FreeImage_GetFormatFromFIF(fif));
-	}
-	cout << message << endl; 
-	cout << endl << "***";
 }
 
 
@@ -129,6 +95,7 @@ void populateImageData(IMAGE_DATA *imgData){
 		}
 	}
 }
+
 
 // ! THIS ONLY SUPPORTS DETECTION FOR FIC_MINISBLACK TYPE IMAGES - Doing this deliberately
 FIBITMAP* detectChanges(IMAGE_DATA img1, IMAGE_DATA img2){
@@ -209,6 +176,7 @@ void highlightChangesInImage(IMAGE_DATA *img, FIBITMAP *differenceBitmap){
 	}
 }
 
+
 void convertToRGBGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg){
 	assert(greyscaleImg->bpp == 8);
 	assert((greyscaleImg->colorType == FIC_MINISBLACK) || (greyscaleImg->colorType == FIC_MINISWHITE));
@@ -225,64 +193,3 @@ void convertToRGBGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg){
 		}
 	}
 }
-
-
-int main(){
-	FreeImage_Initialise();
-	FreeImage_SetOutputMessage(FreeImageErrorHandler);
-	
-	IMAGE_DATA oldImage, newImage, oldGrayImage, newGrayImage;
-	oldImage.address = "./images/old.png";
-	newImage.address = "./images/new.png";
-
-	oldImage.dib = ImageFormatIndependentLoader(oldImage.address.c_str(), 0);
-	newImage.dib = ImageFormatIndependentLoader(newImage.address.c_str(), 0);
-	
-	populateImageData(&oldImage);
-	populateImageData(&newImage);
-	printImageData(oldImage);
-	printImageData(newImage);
-	
-	oldGrayImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
-	oldGrayImage.address = "./images/oldGray.png";
-	populateImageData(&oldGrayImage);
-	saveImage(oldGrayImage);
-	printImageData(oldGrayImage);
-
-	newGrayImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
-	newGrayImage.address = "./images/newGray.png";
-	populateImageData(&newGrayImage);
-	saveImage(newGrayImage);
-	printImageData(oldGrayImage);	
-
-
-	IMAGE_DATA highlightedChanges;
-	copyImage(&highlightedChanges, &oldImage);
-	highlightedChanges.address = "./images/highlightedChanges.png";
-	
-	convertToRGBGreyscale(&highlightedChanges, &oldGrayImage);
-
-	FIBITMAP *differences = detectChanges(oldGrayImage, newGrayImage);
-	highlightChangesInImage(&highlightedChanges, differences);
-	saveImage(highlightedChanges);
-
-
-	
-	FreeImage_Unload(oldImage.dib);
-	FreeImage_Unload(newImage.dib);
-	FreeImage_Unload(oldGrayImage.dib);
-	FreeImage_Unload(newGrayImage.dib);
-	FreeImage_DeInitialise();
-	return 0;
-}
-
-
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// TODOs
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// 1. Pass pointers to functions wherever possible
-// 2. 
-// 
-// 
-// 

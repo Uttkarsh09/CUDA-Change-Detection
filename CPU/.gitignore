@@ -1,7 +1,0 @@
-# TO ignore the executable file, i.e without any extension
-*
-!/**/
-!*.*
-
-.vscode
-logs.txt

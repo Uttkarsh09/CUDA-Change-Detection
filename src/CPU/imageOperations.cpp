@@ -1,11 +1,12 @@
-#include<FreeImage.h>
-#include<iostream>
-#include<assert.h>
-#include"../include/datatypes.hpp"
+#include <iostream>
+#include "FreeImage.h"
+#include <assert.h>
+#include "common/dataTypes.hpp"
 
 #define DIFFERENCE_THRESHOLD 60
 
 using namespace std;
+
 
 // * lpsz -> Long pointer to Null Terminated String
 // * dib -> device independent bitmap

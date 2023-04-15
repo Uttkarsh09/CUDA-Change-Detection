@@ -1,16 +1,13 @@
 #pragma once
-#include <FreeImage.h>
 #include <iostream>
-#include "datatypes.hpp"
+#include "FreeImage.h"
+#include "common/dataTypes.hpp"
 
 using namespace std;
-
 
 string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
 
 FIBITMAP* ImageFormatIndependentLoader(const char* lpszPathName, int flag);
-
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT, const char*);
 
 void printImageData(IMAGE_DATA img);
 

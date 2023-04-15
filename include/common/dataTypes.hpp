@@ -1,6 +1,6 @@
 #pragma once
-#include<FreeImage.h>
-#include<iostream>
+#include <iostream>
+#include "FreeImage.h"
 
 typedef struct Image_Metadata{
 	int width=-1;

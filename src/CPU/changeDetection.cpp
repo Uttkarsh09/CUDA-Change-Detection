@@ -1,24 +1,14 @@
 #include <iostream>
-#include <FreeImage.h>
+#include "FreeImage.h"
 #include <string>
-#include "datatypes.hpp"
+#include "dataTypes.hpp"
 #include "imageOperations.hpp"
 
 
 using namespace std;
 
 
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message){
-	cout << endl << "***";
-	if(fif != FIF_UNKNOWN) {
-		printf("%s Format\n", FreeImage_GetFormatFromFIF(fif));
-	}
-	cout << message << endl; 
-	cout << endl << "***";
-}
-
-
-int main(){
+int runOnCPU(){
 	FreeImage_Initialise();
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 	
@@ -57,7 +47,6 @@ int main(){
 	highlightChangesInImage(&highlightedChanges, differences);
 	saveImage(highlightedChanges);
 
-
 	
 	FreeImage_Unload(oldImage.dib);
 	FreeImage_Unload(newImage.dib);
@@ -66,14 +55,3 @@ int main(){
 	FreeImage_DeInitialise();
 	return 0;
 }
-
-
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// TODOs
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// 1. Pass pointers to functions wherever possible
-// 2. 
-// 
-// 
-// 

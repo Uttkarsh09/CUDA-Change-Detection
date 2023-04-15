@@ -28,4 +28,4 @@ void copyImage(IMAGE_DATA *targetImage, IMAGE_DATA *sourceImage, string targetIm
 
 void highlightChangesInImage(IMAGE_DATA *img, FIBITMAP *differenceBitmap);
 
-void convertToRGBGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg);
+void convertTo24bitGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg);

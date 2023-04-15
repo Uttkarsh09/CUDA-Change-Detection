@@ -33,7 +33,7 @@ void runOnCPU()
 	copyImage(&highlightedChanges, &oldImage);
 	highlightedChanges.address = getImage("highlightedChanges.png");
 	
-	convertToRGBGreyscale(&highlightedChanges, &oldGrayImage);
+	convertTo24bitGreyscale(&highlightedChanges, &oldGrayImage);
 
 	FIBITMAP *differences = detectChanges(oldGrayImage, newGrayImage);
 	highlightChangesInImage(&highlightedChanges, differences);
@@ -44,5 +44,4 @@ void runOnCPU()
 	FreeImage_Unload(newImage.dib);
 	FreeImage_Unload(oldGrayImage.dib);
 	FreeImage_Unload(newGrayImage.dib);
-
 }

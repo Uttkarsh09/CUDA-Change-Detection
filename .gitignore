@@ -1,3 +1,20 @@
+
+# ? 3 step process to ignore UNIX executables
+# 1. Ignore all
+*
+# 2. Unignore all with extensions
+!*.*
+# 3. Unignore all dirs
+!*/
+
 .vscode
-*.obj
+
+# ? Ignore WINDOWS executables
 *.exe
+
+bin/
+
+# ? Ignore new generated images except new.png & old.png
+images/
+!images/new.png
+!images/old.png

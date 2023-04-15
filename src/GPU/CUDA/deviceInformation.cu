@@ -1,6 +1,6 @@
 #include<iostream>
 
-void printMachineInformation(cudaDeviceProp prop){
+void printDeviceInformation(cudaDeviceProp prop){
 	int count;
 
 	cudaGetDeviceCount(&count);
@@ -12,11 +12,11 @@ void printMachineInformation(cudaDeviceProp prop){
 	printf("Name:	%s\n", prop.name );
 	printf("Compute capability: %d.%d\n", prop.major, prop.minor );
 	// printf("Clock rate: %d\n", prop.clockRate );
-	printf("Device copy overlap:	");
-	if (prop.deviceOverlap)
-		printf("Enabled\n");
-	else
-		printf("Disabled\n");
+	// printf("Device copy overlap:	");
+	// if (prop.deviceOverlap)
+	// 	printf("Enabled\n");
+	// else
+	// 	printf("Disabled\n");
 	
 	printf("Kernel execition timeout :	");
 	if (prop.kernelExecTimeoutEnabled)

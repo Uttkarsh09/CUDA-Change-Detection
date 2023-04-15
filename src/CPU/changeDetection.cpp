@@ -1,14 +1,6 @@
-#include <iostream>
-#include "FreeImage.h"
-#include <string>
-#include "dataTypes.hpp"
-#include "imageOperations.hpp"
+#include "headers.hpp"
 
-
-using namespace std;
-
-
-int runOnCPU(){
+void runOnCPU(){
 	FreeImage_Initialise();
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 	
@@ -53,5 +45,4 @@ int runOnCPU(){
 	FreeImage_Unload(oldGrayImage.dib);
 	FreeImage_Unload(newGrayImage.dib);
 	FreeImage_DeInitialise();
-	return 0;
 }

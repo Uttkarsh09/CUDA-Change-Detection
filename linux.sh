@@ -1,32 +1,35 @@
 #!/bin/bash
 
+# ? Moving into the bin directory
+cd ./bin/
+
 compileCPU(){
-	cd ./bin/CPU/
-	g++ -I ../../include/ ../../src/CPU/*.cpp -o detectChanges -L ../../ -lfreeimage
-	cd ../../
+	cd ./CPU/
+	g++  -I ../../include/ -c ../../src/CPU/*.cpp
+	cd ../
 }
 
 compileCUDA(){
-	printf "CUDA Underprogress...\n"
+	cd ./GPU/CUDA/
+	nvcc -I ../../../../include/ -c ../../../*.cu 
+	cd ../../
 }
 
 compileOpenCL(){
+	cd ./GPU/OpenCL
 	printf "OpenCL Underprogress...\n"
+	cd ../../
 }
 
-echo "COMPILING ON CPU"
 compileCPU
 
-printf "\nChecking for GPU\n"
 GPU_INFO=`nvcc --version | grep NVIDIA`
 
 if [ "$GPU_INFO" == "" ]; then
-	echo "NVIDIA GPU NOT AVAILABLE"
-	echo "USING OpenCL Instead"
 	compileOpenCL
 else
-	echo "NVIDIA GPU AVAILABLE"
-	echo "USING CUDA"
 	compileCUDA
+	g++ -o detectChanges -L ../../lib/ ./CPU/*.o ./GPU/CUDA/*.o -lfreeimage
 fi
 
+cd ..

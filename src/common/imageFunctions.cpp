@@ -17,9 +17,9 @@ string getImage(string image)
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
-	cout << endl << "***";
+	cout <<  "***" << endl;
 	if(fif != FIF_UNKNOWN)
 		cout << FreeImage_GetFormatFromFIF(fif) << "Format" << endl;
 	cout << message << endl; 
-	cout << endl << "***";
+	cout << "***" << endl;
 }

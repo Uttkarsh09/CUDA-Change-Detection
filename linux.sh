@@ -1,35 +1,22 @@
 #!/bin/bash
 
-# ? Moving into the bin directory
+clear
+stty -echo
+
 cd ./bin/
-
-compileCPU(){
-	cd ./CPU/
-	g++  -I ../../include/ -c ../../src/CPU/*.cpp
-	cd ../
-}
-
-compileCUDA(){
-	cd ./GPU/CUDA/
-	nvcc -I ../../../../include/ -c ../../../*.cu 
-	cd ../../
-}
-
-compileOpenCL(){
-	cd ./GPU/OpenCL
-	printf "OpenCL Underprogress...\n"
-	cd ../../
-}
-
-compileCPU
 
 GPU_INFO=`nvcc --version | grep NVIDIA`
 
 if [ "$GPU_INFO" == "" ]; then
-	compileOpenCL
+	printf "OpenCL Underprogress...\n"
 else
-	compileCUDA
-	g++ -o detectChanges -L ../../lib/ ./CPU/*.o ./GPU/CUDA/*.o -lfreeimage
+	nvcc -I ../include/ -c ../src/GPU/CUDA/*.cu 
+
+	nvcc  -I ../include/ -c ../src/main.cpp ../src/common/*.cpp ../src/CPU/*.cpp
+	
+	nvcc -o ../detectChanges -L ../lib/ *.o -lfreeimage
 fi
 
 cd ..
+./detectChanges
+stty echo

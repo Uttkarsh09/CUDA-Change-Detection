@@ -1,9 +1,12 @@
 #pragma once
-#include <iostream>
-#include "FreeImage.h"
-#include "common/dataTypes.hpp"
 
+#include <iostream>
+#include <assert.h>
+#include "../common/FreeImage.h"
+#include "../common/dataTypes.hpp"
 using namespace std;
+
+#define DIFFERENCE_THRESHOLD 60
 
 string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE);
 

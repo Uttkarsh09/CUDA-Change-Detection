@@ -1,1 +1,0 @@
-void printDeviceInformation(cudaDeviceProp prop);

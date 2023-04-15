@@ -1,12 +1,10 @@
-#include "headers.hpp"
+#include "../include/headers.hpp"
 
-int main(){
-	
+int main()
+{
+	getPlatformInfo();
+
 	runOnCPU();
 
-	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-	
-	listDevices();
-	
 	return 0;
 }

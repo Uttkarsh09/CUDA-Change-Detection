@@ -4,7 +4,7 @@ void runOnCPU()
 {
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 	
-	IMAGE_DATA oldImage, newImage, oldGrayImage, newGrayImage;
+	IMAGE_DATA oldImage, newImage, oldGreyImage, newGreyImage;
 	oldImage.address = getImage("old.png");
 	newImage.address = getImage("new.png");
 
@@ -16,32 +16,32 @@ void runOnCPU()
 	printImageData(oldImage);
 	printImageData(newImage);
 	
-	oldGrayImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
-	oldGrayImage.address = getImage("oldGray.png");
-	populateImageData(&oldGrayImage);
-	saveImage(oldGrayImage);
-	printImageData(oldGrayImage);
+	oldGreyImage.dib = FreeImage_ConvertToGreyscale(oldImage.dib);
+	oldGreyImage.address = getImage("oldGrey.png");
+	populateImageData(&oldGreyImage);
+	saveImage(oldGreyImage);
+	printImageData(oldGreyImage);
 
-	newGrayImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
-	newGrayImage.address = getImage("newGray.png");
-	populateImageData(&newGrayImage);
-	saveImage(newGrayImage);
-	printImageData(oldGrayImage);	
+	newGreyImage.dib = FreeImage_ConvertToGreyscale(newImage.dib);
+	newGreyImage.address = getImage("newGrey.png");
+	populateImageData(&newGreyImage);
+	saveImage(newGreyImage);
+	printImageData(oldGreyImage);	
 
 
 	IMAGE_DATA highlightedChanges;
 	copyImage(&highlightedChanges, &oldImage);
 	highlightedChanges.address = getImage("highlightedChanges.png");
 	
-	convertTo24bitGreyscale(&highlightedChanges, &oldGrayImage);
+	convertTo24bitGreyscale(&highlightedChanges, &oldGreyImage);
 
-	FIBITMAP *differences = detectChanges(oldGrayImage, newGrayImage);
+	FIBITMAP *differences = detectChanges(oldGreyImage, newGreyImage);
 	highlightChangesInImage(&highlightedChanges, differences);
 	saveImage(highlightedChanges);
 
 
 	FreeImage_Unload(oldImage.dib);
 	FreeImage_Unload(newImage.dib);
-	FreeImage_Unload(oldGrayImage.dib);
-	FreeImage_Unload(newGrayImage.dib);
+	FreeImage_Unload(oldGreyImage.dib);
+	FreeImage_Unload(newGreyImage.dib);
 }

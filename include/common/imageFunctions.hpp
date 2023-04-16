@@ -12,5 +12,5 @@ using namespace std;
     #pragma comment(lib, "FreeImage.lib")
 #endif
 
-string getImage(string);
+string getImagePath(string);
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message);

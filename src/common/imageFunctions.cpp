@@ -1,6 +1,6 @@
 #include "../../include/common/imageFunctions.hpp"
 
-string getImage(string image)
+string getImagePath(string imageName)
 {
 	string imageDirectory;
 	filesystem::path currentPath = filesystem::current_path();
@@ -10,7 +10,7 @@ string getImage(string image)
 	else
 		imageDirectory = "images/";		// Linux and macOS
 	
-	filesystem::path imagePath =  currentPath / imageDirectory / image;
+	filesystem::path imagePath =  currentPath / imageDirectory / imageName;
 
 	return imagePath.string();
 }

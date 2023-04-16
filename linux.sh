@@ -1,7 +1,7 @@
 #!/bin/bash
+set -e
 
 clear
-stty -echo
 
 cd ./bin/
 
@@ -19,4 +19,3 @@ fi
 
 cd ..
 ./detectChanges
-stty echo

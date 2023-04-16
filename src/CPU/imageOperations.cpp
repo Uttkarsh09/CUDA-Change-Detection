@@ -93,7 +93,7 @@ void populateImageData(IMAGE_DATA *imgData)
 	
 		if(imgData->imageFormat == FIF_UNKNOWN)
 		{
-			cout << "Can't get FIF (Free Image Format)";
+			cout << "ERROR: Can't get FIF (Free Image Format)";
 			exit(1);
 		}
 	}
@@ -209,6 +209,29 @@ void convertTo24bitGreyscale(IMAGE_DATA *img, IMAGE_DATA *greyscaleImg)
 			color.rgbGreen = bits;
 			color.rgbBlue = bits;
 			FreeImage_SetPixelColor(img->dib, x, y, &color);
+		}
+	}
+}
+
+
+void convertTo8bitGreyscale(IMAGE_DATA *greyscaleImg, IMAGE_DATA *rgbImg)
+{
+	assert(greyscaleImg->bpp == 8);
+	assert((greyscaleImg->colorType == FIC_MINISBLACK) || (greyscaleImg->colorType == FIC_MINISWHITE));
+	BYTE bits;
+	RGBQUAD color;
+	int greyscaleValue;
+
+	for (int y=0 ; y<rgbImg->height ; y++)
+	{
+		for (int x=0 ; x<rgbImg->width ; x++)
+		{
+			FreeImage_GetPixelColor(rgbImg->dib, x, y, &color);
+			greyscaleValue = (0.3 * color.rgbRed) + (0.59 * color.rgbGreen) + (0.11 * color.rgbBlue);
+			color.rgbRed = greyscaleValue;
+			color.rgbGreen = greyscaleValue;
+			color.rgbBlue = greyscaleValue;
+			FreeImage_SetPixelColor(greyscaleImg->dib, x, y, &color);
 		}
 	}
 }

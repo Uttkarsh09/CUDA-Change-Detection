@@ -2,9 +2,9 @@
 
 int main()
 {
-	getPlatformInfo();
+	//runOnCPU();
 
-	runOnCPU();
+	runOnGPU();
 
 	return 0;
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../common/devicePlatform.hpp"
+#include "../../common/systemMacros.hpp"
 
-#if (PLATFORM == 1) || (PLATFORM == 2)
+#if (PLATFORM == 1)
     #include <CL/opencl.h>
     #pragma comment(lib, "OpenCL.lib")
 #elif (PLATFORM == 2)
@@ -12,8 +12,14 @@
 #endif
 
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 // Function Declarations
-void getPlatformInfo(void);
+void getOpenCLPlatforms(void);
+void getOpenCLDevices(void);
 void printOpenCLDeviceProperties(void);
+void createOpenCLContext(void);
+void createOpenCLCommandQueue(void);
+void runOnGPU(void);
+void cleanup(void);

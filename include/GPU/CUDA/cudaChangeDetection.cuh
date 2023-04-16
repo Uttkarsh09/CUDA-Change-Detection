@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../common/devicePlatform.hpp"
+#include "../../common/systemMacros.hpp"
 
 #if (PLATFORM == 1)
     #include <cuda.h>
@@ -12,9 +12,9 @@
 
 #include <iostream>
 #include <math.h>
-
 using namespace std;
 
 // Function Protoypes
-void getPlatformInfo(void);
 void printCUDADeviceProperties(void);
+void runOnGPU(void);
+void cleanup(void);

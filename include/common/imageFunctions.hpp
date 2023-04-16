@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 
-#include "devicePlatform.hpp"
+#include "systemMacros.hpp"
 #include "FreeImage.h"
 
 #if (PLATFORM == 1)

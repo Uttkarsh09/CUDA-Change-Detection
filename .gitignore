@@ -13,8 +13,6 @@
 *.exe
 *.obj
 
-bin/
-
 # ? Ignore new generated images except new.png & old.png
 images/
 !images/new.png

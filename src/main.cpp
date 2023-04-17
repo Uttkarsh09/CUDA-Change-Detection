@@ -50,7 +50,8 @@ int main()
 
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD);
 
-	// getPlatformInfo();
+	free(oldImage.bitmap);
+	free(newImage.bitmap);
 	
 	return 0;
 }

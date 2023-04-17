@@ -5,6 +5,8 @@
 #include <string>
 using namespace std;
 
+#include "devicePlatform.hpp"
+#include "dataTypes.hpp"
 #include "systemMacros.hpp"
 #include "FreeImage.h"
 
@@ -13,4 +15,11 @@ using namespace std;
 #endif
 
 string getImagePath(string);
+
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message);
+
+void populateImageData(IMAGE_DATA *imgData);
+
+FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag);
+
+void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address);

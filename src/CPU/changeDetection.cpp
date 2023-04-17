@@ -1,50 +1,36 @@
 #include "../../include/CPU/changeDetection.hpp"
 
-void runOnCPU()
+void runOnCPU(IMAGE_DATA *oldImage, IMAGE_DATA *newImage, int threshold)
 {
-	FreeImage_SetOutputMessage(FreeImageErrorHandler);
-	
-	IMAGE_DATA oldImage, newImage, oldGreyImage, newGreyImage;
-	oldImage.address = getImagePath("old.png");
-	oldImage.dib = ImageFormatIndependentLoader(oldImage.address.c_str(), 0);
+	BYTE *highlightChangesBitmap, *startCpy;
+	string highlightedImageAddress = getImagePath("CPU_Highlighted_Changes.png");
+	FIBITMAP *highlightChangesDib;
 
-	newImage.address = getImagePath("new.png");
-	newImage.dib = ImageFormatIndependentLoader(newImage.address.c_str(), 0);
-	
-	populateImageData(&oldImage);
-	printImageData(oldImage);
-	
-	populateImageData(&newImage);
-	printImageData(newImage);
-	
-	oldGreyImage.dib = FreeImage_Allocate(oldImage.width, oldImage.height, 8);
-	oldGreyImage.address = getImagePath("oldGrey.png");
-	populateImageData(&oldGreyImage); 
-	convertTo8bitGreyscale(&oldGreyImage, &oldImage);
-	saveImage(oldGreyImage);
-	printImageData(oldGreyImage);
+	highlightChangesBitmap = (BYTE*)malloc(oldImage->height * oldImage->bitmapWidth);
+	startCpy = highlightChangesBitmap;
 
-	newGreyImage.dib = FreeImage_Allocate(newImage.width, newImage.height, 8);
-	newGreyImage.address = getImagePath("newGrey.png");
-	populateImageData(&newGreyImage);
-	convertTo8bitGreyscale(&newGreyImage, &newImage);
-	saveImage(newGreyImage);
-	printImageData(oldGreyImage);	
+	CPUChangeDetection(
+		oldImage->bitmap,
+		newImage->bitmap,
+		highlightChangesBitmap,
+		oldImage->bitmapWidth,
+		oldImage->width,
+		oldImage->height,
+		threshold
+	);
 
+	highlightChangesDib = FreeImage_ConvertFromRawBits(
+		startCpy, 
+		oldImage->width, 
+		oldImage->height, 
+		oldImage->bitmapWidth, 
+		oldImage->bpp, 
+		FI_RGBA_RED_MASK, 
+		FI_RGBA_GREEN_MASK, 
+		FI_RGBA_BLUE_MASK, 
+		TRUE
+	);
 
-	IMAGE_DATA highlightedChanges;
-	copyImage(&highlightedChanges, &oldImage);
-	highlightedChanges.address = getImagePath("highlightedChanges.png");
-	
-	convertTo24bitGreyscale(&highlightedChanges, &oldGreyImage);
+	saveImage(highlightChangesDib, oldImage->imageFormat, highlightedImageAddress);
 
-	FIBITMAP *differences = detectChanges(oldGreyImage, newGreyImage);
-	highlightChangesInImage(&highlightedChanges, differences);
-	saveImage(highlightedChanges);
-
-
-	FreeImage_Unload(oldImage.dib);
-	FreeImage_Unload(newImage.dib);
-	FreeImage_Unload(oldGreyImage.dib);
-	FreeImage_Unload(newGreyImage.dib);
 }

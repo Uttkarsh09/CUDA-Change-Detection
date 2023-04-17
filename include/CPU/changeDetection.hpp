@@ -2,4 +2,4 @@
 
 #include "../headers.hpp"
 
-void runOnCPU();
+void runOnCPU(IMAGE_DATA *oldImage, IMAGE_DATA *newImage, int threshold);

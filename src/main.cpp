@@ -1,12 +1,12 @@
 // * dib -> Device Independent Bitmap - bitmap datatyp of FreeImage
-// * bitmap -> normal BYTE bitmap (array of BYTE)
+// * bitmap -> normal uint8_t bitmap (array of uint8_t)
 
 #include "../include/headers.hpp"
+#include <chrono>
 
 int main()
 {
-	IMAGE_DATA oldImage, newImage;
-	BYTE *oldImageBitmap, *newImageBitmap, *highlightChangesBitmap;
+	ImageData oldImage, newImage;
 
 	oldImage.address = getImagePath("old.png");
 	newImage.address = getImagePath("new.png");
@@ -23,13 +23,13 @@ int main()
 		exit(1);
 	}
 	
-	oldImage.bitmap = (BYTE*)malloc(oldImage.height * oldImage.bitmapWidth);
-	newImage.bitmap = (BYTE*)malloc(newImage.height * newImage.bitmapWidth);
+	oldImage.bitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
+	newImage.bitmap = (uint8_t*)malloc(newImage.height * newImage.pitch);
 	
 	FreeImage_ConvertToRawBits(
 		oldImage.bitmap, 
 		oldImage.dib, 
-		oldImage.bitmapWidth,
+		oldImage.pitch,
 		oldImage.bpp, 
 		FI_RGBA_RED_MASK, 
 		FI_RGBA_GREEN_MASK,
@@ -40,7 +40,7 @@ int main()
 	FreeImage_ConvertToRawBits(
 		newImage.bitmap,
 		newImage.dib,
-		newImage.bitmapWidth,
+		newImage.pitch,
 		newImage.bpp,
 		FI_RGBA_RED_MASK,
 		FI_RGBA_GREEN_MASK,
@@ -48,9 +48,47 @@ int main()
 		TRUE
 	);
 
-	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD);
+	uint8_t *GPU_DetectedChangesBitmap, *CPU_DetectedChangesBitmap;
+	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
+	string CPU_ImageAddress, GPU_ImageAddress;
+	
+	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.png");
+	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.png");
 
-	// getPlatformInfo();
+	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
+	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
+
+	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
+	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);	
+	
+
+	CPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
+		CPU_DetectedChangesBitmap, 
+		oldImage.width, 
+		oldImage.height, 
+		oldImage.pitch, 
+		oldImage.bpp, 
+		FI_RGBA_RED_MASK, 
+		FI_RGBA_GREEN_MASK, 
+		FI_RGBA_BLUE_MASK, 
+		TRUE
+	);
+
+	GPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
+		GPU_DetectedChangesBitmap, 
+		oldImage.width, 
+		oldImage.height, 
+		oldImage.pitch, 
+		oldImage.bpp, 
+		FI_RGBA_RED_MASK, 
+		FI_RGBA_GREEN_MASK, 
+		FI_RGBA_BLUE_MASK, 
+		TRUE
+	);
+
+	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
+	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	
 	
 	return 0;
 }

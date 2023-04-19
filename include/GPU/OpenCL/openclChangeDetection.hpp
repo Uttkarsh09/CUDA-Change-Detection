@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../common/systemMacros.hpp"
+#include "../../common/dataTypes.hpp"
 
 #if (PLATFORM == 1)
     #include <CL/opencl.h>
@@ -21,5 +22,5 @@ void getOpenCLDevices(void);
 void printOpenCLDeviceProperties(void);
 void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
-void runOnGPU(void);
+void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);
 void cleanup(void);

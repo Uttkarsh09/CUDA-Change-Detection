@@ -18,7 +18,9 @@ string getImagePath(string);
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message);
 
-void populateImageData(IMAGE_DATA *imgData);
+void populateImageData(ImageData *imageData);
+
+void printImageData(ImageData *image);
 
 FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag);
 

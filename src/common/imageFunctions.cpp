@@ -51,22 +51,56 @@ FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag)
 }
 
 
-void populateImageData(IMAGE_DATA *imgData)
+string mapIDToImageFormatName(FREE_IMAGE_FORMAT id)
 {
-	imgData->width = FreeImage_GetWidth(imgData->dib);
-	imgData->height = FreeImage_GetHeight(imgData->dib);
- 	imgData->bpp = FreeImage_GetBPP(imgData->dib);
-	imgData->memorySize = FreeImage_GetMemorySize(imgData->dib);	
-	imgData->colorType = FreeImage_GetColorType(imgData->dib); 
-	imgData->bitmapWidth = FreeImage_GetPitch(imgData->dib);
+	string fif = FreeImage_GetFormatFromFIF(id);
+	return (fif == "") ? "!!! FIF_UNKNOWN !!!" : fif;
+}
 
-	imgData->imageFormat = FreeImage_GetFileType(imgData->address.c_str(), 0);
 
-	if(imgData->imageFormat == FIF_UNKNOWN)
+string mapIDToColorTypeName(FREE_IMAGE_COLOR_TYPE id)
+{
+	switch(id)
 	{
-		imgData->imageFormat = FreeImage_GetFIFFromFilename(imgData->address.c_str());
+		case 0: return "FIC_MINISWHITE";
+		case 1: return "FIC_MINISBLACK";
+		case 2: return "FIC_RGB       ";
+		case 3: return "FIC_PALETTE   ";
+		case 4: return "FIC_RGBALPHA  ";
+		case 5: return "FIC_CMYK      ";
+		default: return "FIF_UNKNOWN";
+	}
+}
+
+
+void printImageData(ImageData *image)
+{
+	cout << "Address \t= " << image->address << endl;
+	cout << "Resolution \t= " << image->width << "x" << image->height << endl;
+	cout << "Bits Per Pixel \t= " << image->bpp << endl;
+	cout << "Color Type \t= " << image->colorType << " -> " << mapIDToColorTypeName(image->colorType) << endl;
+	cout << "Pitch \t\t=" << image->pitch << endl;
+	cout << "Bitmap Width \t=" << image->bitmapWidth << endl;
+	cout << "Image Format \t= " << image->imageFormat << " -> " << mapIDToImageFormatName(image->imageFormat) << endl;
+	cout << endl;
+}
+
+
+void populateImageData(ImageData *imageData)
+{
+	imageData->width = FreeImage_GetWidth(imageData->dib);
+	imageData->height = FreeImage_GetHeight(imageData->dib);
+ 	imageData->bpp = FreeImage_GetBPP(imageData->dib);	
+	imageData->colorType = FreeImage_GetColorType(imageData->dib); 
+	imageData->pitch = FreeImage_GetPitch(imageData->dib);
+	imageData->bitmapWidth = FreeImage_GetLine(imageData->dib);
+	imageData->imageFormat = FreeImage_GetFileType(imageData->address.c_str(), 0);
+
+	if(imageData->imageFormat == FIF_UNKNOWN)
+	{
+		imageData->imageFormat = FreeImage_GetFIFFromFilename(imageData->address.c_str());
 	
-		if(imgData->imageFormat == FIF_UNKNOWN)
+		if(imageData->imageFormat == FIF_UNKNOWN)
 		{
 			cout << "ERROR: Can't get FIF (Free Image Format)";
 			exit(1);

@@ -4,4 +4,4 @@
 #include "../common/dataTypes.hpp"
 #include "../common/imageFunctions.hpp"
 
-void runOnCPU(IMAGE_DATA *oldImage, IMAGE_DATA *newImage, int threshold);
+void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);

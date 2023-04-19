@@ -71,46 +71,23 @@ void printCUDADeviceProperties(void)
 	}
 }
 
-void convertBitmapToPixelArr(uint8_t *bitmap, Pixel *pixelArr, size_t size)
-{
-	for(int i=0 ; i<size ; i++, bitmap+=3)
-	{
-		pixelArr[i].blue = bitmap[0];
-		pixelArr[i].green = bitmap[1];
-		pixelArr[i].red = bitmap[2];
-	}
-}
-
-
-void convertPixelArrToBitmap(Pixel *pixelArr, uint8_t *bitmap, size_t size){
-	for(int i=0 ; i<size ; i++, bitmap+=3)
-	{
-		bitmap[0] = pixelArr[i].blue;
-		bitmap[1] = pixelArr[i].green;
-		bitmap[2] = pixelArr[i].red;
-	}
-}
-
 
 void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
-	Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangesPixArr;
-	Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangesPixArr;
+	Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
+	Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
-	uint8_t *bitmapPtrCpy;
 
 	h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	h_highlightedChangesPixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 
-	bitmapPtrCpy = oldImage->bitmap;
-	convertBitmapToPixelArr(bitmapPtrCpy, h_oldImagePixArr, size);
-	bitmapPtrCpy = newImage->bitmap;
-	convertBitmapToPixelArr(bitmapPtrCpy, h_newImagePixArr, size);
+	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
+	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
 
 	cudaMalloc(&d_oldImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));
-	cudaMalloc(&d_highlightedChangesPixArr, size * sizeof(Pixel));
+	cudaMalloc(&d_highlightedChangePixArr, size * sizeof(Pixel));
 
 	// printCUDADeviceProperties();
 
@@ -119,24 +96,25 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	dim3 blocks((size + (THREADS_PER_BLOCK - 1)) / THREADS_PER_BLOCK);
 	
-	auto start = std::chrono::high_resolution_clock::now();
-	detectChanges<<<blocks, THREADS_PER_BLOCK>>>(d_oldImagePixArr, d_newImagePixArr, d_highlightedChangesPixArr, threshold, size);
-	auto stop = std::chrono::high_resolution_clock::now();
+	// ! auto start = std::chrono::high_resolution_clock::now();
 
-	auto GPU_Duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	cout << "GPU Duration = " << GPU_Duration.count() << endl;
+	detectChanges<<<blocks, THREADS_PER_BLOCK>>>(d_oldImagePixArr, d_newImagePixArr, d_highlightedChangePixArr, threshold, size);
+	
+	// ! auto stop = std::chrono::high_resolution_clock::now();
 
-	cudaMemcpy(h_highlightedChangesPixArr, d_highlightedChangesPixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
+	// ! auto GPU_Duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	// ! cout << "GPU Duration = " << GPU_Duration.count() << endl;
 
-	bitmapPtrCpy = detectedChanges;
-	convertPixelArrToBitmap(h_highlightedChangesPixArr, bitmapPtrCpy, size);
+	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
+
+	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
 
 	free(h_oldImagePixArr);
 	free(h_newImagePixArr);
-	free(h_highlightedChangesPixArr);
-	cudaFree(d_highlightedChangesPixArr);
+	free(h_highlightedChangePixArr);
 	cudaFree(d_oldImagePixArr);
 	cudaFree(d_newImagePixArr);
+	cudaFree(d_highlightedChangePixArr);
 }
 
 

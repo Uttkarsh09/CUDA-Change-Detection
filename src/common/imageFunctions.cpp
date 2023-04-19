@@ -123,3 +123,29 @@ void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address)
 	
 	cout << "Image Saved Successfully at " << address << endl;
 }
+
+
+void convertBitmapToPixelArr(Pixel *pixelArr, uint8_t *bitmap, size_t size)
+{
+	uint8_t *bitmapPtrCpy = bitmap;
+	
+	for(int i=0 ; i<size ; i++, bitmapPtrCpy+=3)
+	{
+		pixelArr[i].blue = bitmapPtrCpy[0];
+		pixelArr[i].green = bitmapPtrCpy[1];
+		pixelArr[i].red = bitmapPtrCpy[2];
+	}
+}
+
+
+void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size)
+{
+	uint8_t *bitmapPtrCpy = bitmap;
+
+	for(int i=0 ; i<size ; i++, bitmapPtrCpy+=3)
+	{
+		bitmapPtrCpy[0] = pixelArr[i].blue;
+		bitmapPtrCpy[1] = pixelArr[i].green;
+		bitmapPtrCpy[2] = pixelArr[i].red;
+	}
+}

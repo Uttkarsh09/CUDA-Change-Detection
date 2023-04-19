@@ -25,3 +25,7 @@ void printImageData(ImageData *image);
 FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag);
 
 void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address);
+
+void convertBitmapToPixelArr(Pixel *pixelArr, uint8_t *bitmap, size_t size);
+
+void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size);

@@ -2,6 +2,7 @@
 
 #include "../../common/systemMacros.hpp"
 #include "../../common/dataTypes.hpp"
+#include "../../common/imageFunctions.hpp"
 
 #include <cuda.h>
 #include <chrono>

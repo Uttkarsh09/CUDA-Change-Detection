@@ -1,54 +1,40 @@
 #include "../../include/CPU/imageOperations.hpp"
 
 
-void CPUChangeDetection(uint8_t *oldImageBitmap, uint8_t *newImageBitmap, uint8_t *highlightChangesBitmap, int pitch, int width, int height, int threshold)
+void CPUChangeDetection(Pixel *oldImagePixelArr, Pixel *newImagePixelArr, Pixel *highlightedChangePixelArr, uint8_t threshold, int width, int height)
 {
-	int oldGreyVal, newGreyVal, difference;
-	uint8_t *oldImagePixels, *newImagePixels, *highlightChangePixels;
+	uint8_t oldGreyVal, newGreyVal, difference;
 
 	for(int j=0 ; j<height ; j++)
 	{
-		oldImagePixels = (uint8_t*)oldImageBitmap;
-		newImagePixels = (uint8_t*)newImageBitmap;
-		highlightChangePixels = (uint8_t*)highlightChangesBitmap;
-
 		for(int i=0 ; i<width; i++)
 		{
-			oldGreyVal = (int) (
-				(0.3 * (int)oldImagePixels[FI_RGBA_RED]) + 
-				(0.59 * (int)oldImagePixels[FI_RGBA_GREEN]) + 
-				(0.11 * (int) oldImagePixels[FI_RGBA_BLUE])
+			oldGreyVal = (uint8_t) (
+				(0.3 * (uint8_t)oldImagePixelArr[(j * width) + i].red) + 
+				(0.59 * (uint8_t)oldImagePixelArr[(j * width) + i].green) + 
+				(0.11 * (uint8_t)oldImagePixelArr[(j * width) + i].blue)
 			);
 
-			newGreyVal = (int) (
-				(0.3 * (int)newImagePixels[FI_RGBA_RED]) + 
-				(0.59 * (int)newImagePixels[FI_RGBA_GREEN]) + 
-				(0.11 * (int) newImagePixels[FI_RGBA_BLUE])
+			newGreyVal = (uint8_t) (
+				(0.3 * (uint8_t)newImagePixelArr[(j * width) + i].red) + 
+				(0.59 * (uint8_t)newImagePixelArr[(j * width) + i].green) + 
+				(0.11 * (uint8_t)newImagePixelArr[(j * width) + i].blue)
 			);
 
 			difference = abs(oldGreyVal - newGreyVal);
 			
 			if(difference >= threshold)
 			{
-				highlightChangePixels[FI_RGBA_RED] = 255;
-				highlightChangePixels[FI_RGBA_GREEN] = 0;
-				highlightChangePixels[FI_RGBA_BLUE] = 0;
-			} 
+				highlightedChangePixelArr[(j * width) + i].red = 255;
+				highlightedChangePixelArr[(j * width) + i].green = 0;
+				highlightedChangePixelArr[(j * width) + i].blue = 0;
+			}
 			else 
 			{
-				highlightChangePixels[FI_RGBA_RED] = oldGreyVal;
-				highlightChangePixels[FI_RGBA_GREEN] = oldGreyVal;
-				highlightChangePixels[FI_RGBA_BLUE] = oldGreyVal;
+				highlightedChangePixelArr[(j * width) + i].red = oldGreyVal;
+				highlightedChangePixelArr[(j * width) + i].green = oldGreyVal;
+				highlightedChangePixelArr[(j * width) + i].blue = oldGreyVal;
 			}
-			
-
-			oldImagePixels += 3;
-			newImagePixels += 3;
-			highlightChangePixels += 3;
 		}
-
-		oldImageBitmap += pitch;
-		newImageBitmap += pitch;
-		highlightChangesBitmap += pitch;
 	}
 }

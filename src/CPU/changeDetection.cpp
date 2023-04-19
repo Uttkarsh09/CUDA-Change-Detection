@@ -1,36 +1,32 @@
 #include "../../include/CPU/changeDetection.hpp"
 
-void runOnCPU(IMAGE_DATA *oldImage, IMAGE_DATA *newImage, int threshold)
+void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
-	BYTE *highlightChangesBitmap, *startCpy;
-	string highlightedImageAddress = getImagePath("CPU_Highlighted_Changes.png");
+	Pixel *oldImagePixArr, *newImagePixArr, *highlightedChangePixArr;
+	uint8_t *highlightChangesBitmap, *startCpy;
 	FIBITMAP *highlightChangesDib;
+	size_t size = (oldImage->height * oldImage->pitch)/3;
 
-	highlightChangesBitmap = (BYTE*)malloc(oldImage->height * oldImage->bitmapWidth);
-	startCpy = highlightChangesBitmap;
+	oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 
-	CPUChangeDetection(
-		oldImage->bitmap,
-		newImage->bitmap,
-		highlightChangesBitmap,
-		oldImage->bitmapWidth,
-		oldImage->width,
-		oldImage->height,
-		threshold
-	);
+	convertBitmapToPixelArr(oldImagePixArr, oldImage->bitmap, size);
+	convertBitmapToPixelArr(newImagePixArr, newImage->bitmap, size);
 
-	highlightChangesDib = FreeImage_ConvertFromRawBits(
-		startCpy, 
-		oldImage->width, 
-		oldImage->height, 
-		oldImage->bitmapWidth, 
-		oldImage->bpp, 
-		FI_RGBA_RED_MASK, 
-		FI_RGBA_GREEN_MASK, 
-		FI_RGBA_BLUE_MASK, 
-		TRUE
-	);
+	
+	// ! auto start = std::chrono::high_resolution_clock::now();
 
-	saveImage(highlightChangesDib, oldImage->imageFormat, highlightedImageAddress);
+	CPUChangeDetection(oldImagePixArr, newImagePixArr, highlightedChangePixArr, threshold, oldImage->width, oldImage->height);
 
+	// ! auto stop = std::chrono::high_resolution_clock::now();
+	
+	// ! auto CPU_Duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	// ! cout << "CPU Duration = " << CPU_Duration.count() << endl;
+
+	convertPixelArrToBitmap(detectedChanges, highlightedChangePixArr, size);
+
+	free(oldImagePixArr);
+	free(newImagePixArr);
+	free(highlightedChangePixArr);
 }

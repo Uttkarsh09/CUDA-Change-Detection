@@ -1,20 +1,20 @@
 #pragma once
 
 #include "../../common/systemMacros.hpp"
+#include "../../common/dataTypes.hpp"
+#include "../../common/imageFunctions.hpp"
+
+#include <cuda.h>
+#include <chrono>
 
 #if (PLATFORM == 1)
-    #include <cuda.h>
     #pragma comment(lib, "cuda.lib")
     #pragma comment(lib, "cudart.lib")
-#else
-    #include <cuda.h>
 #endif
 
-#include <iostream>
 #include <math.h>
-using namespace std;
 
 // Function Protoypes
 void printCUDADeviceProperties(void);
-void runOnGPU(void);
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);
 void cleanup(void);

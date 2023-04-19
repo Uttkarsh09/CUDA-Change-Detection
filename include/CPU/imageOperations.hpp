@@ -8,6 +8,4 @@ using namespace std;
 
 #define DIFFERENCE_THRESHOLD 60
 
-void printImageData(IMAGE_DATA img);
-
-void CPUChangeDetection(BYTE *oldImageBitmap, BYTE *newImageBitmap, BYTE *highlightChangesBitmap, int bitmapWidth, int width, int height, int threshold);
+void CPUChangeDetection(Pixel *oldImagePixelArr, Pixel *newImagePixelArr, Pixel *highlightedChangePixelArr, uint8_t threshold, int width, int height);

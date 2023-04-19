@@ -6,6 +6,7 @@ void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	uint8_t *highlightChangesBitmap, *startCpy;
 	FIBITMAP *highlightChangesDib;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
+	float timeOnCPU = 0.0f;
 
 	oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
@@ -15,14 +16,17 @@ void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	convertBitmapToPixelArr(newImagePixArr, newImage->bitmap, size);
 
 	
-	// ! auto start = std::chrono::high_resolution_clock::now();
+	StopWatchInterface* timer = NULL;
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
 
 	CPUChangeDetection(oldImagePixArr, newImagePixArr, highlightedChangePixArr, threshold, oldImage->width, oldImage->height);
 
-	// ! auto stop = std::chrono::high_resolution_clock::now();
+	sdkStopTimer(&timer);
+	timeOnCPU = sdkGetTimerValue(&timer);
+	sdkDeleteTimer(&timer);
 	
-	// ! auto CPU_Duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	// ! cout << "CPU Duration = " << CPU_Duration.count() << endl;
+	cout << "Time Taken on CPU: " << timeOnCPU << "ms" << endl;
 
 	convertPixelArrToBitmap(detectedChanges, highlightedChangePixArr, size);
 

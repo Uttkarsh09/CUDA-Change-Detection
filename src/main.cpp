@@ -2,20 +2,22 @@
 // * bitmap -> normal uint8_t bitmap (array of uint8_t)
 
 #include "../include/headers.hpp"
-#include <chrono>
 
 int main()
 {
 	ImageData oldImage, newImage;
 
-	oldImage.address = getImagePath("old.png");
-	newImage.address = getImagePath("new.png");
+	oldImage.address = getImagePath("bigImgOld.tif");
+	newImage.address = getImagePath("bigImgNew.tif");
 
 	oldImage.dib = imageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = imageFormatIndependentLoader(newImage.address.c_str(), 0);
 
 	populateImageData(&oldImage);
 	populateImageData(&newImage);
+
+	// printImageData(&oldImage);
+	// printImageData(&newImage);
 
 	if((oldImage.height != newImage.height) || (oldImage.width != newImage.width))
 	{
@@ -52,8 +54,8 @@ int main()
 	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
 	string CPU_ImageAddress, GPU_ImageAddress;
 	
-	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.png");
-	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.png");
+	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.tif");
+	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.tif");
 
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);

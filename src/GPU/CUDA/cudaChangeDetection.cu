@@ -1,5 +1,7 @@
 #include "../../../include/GPU/CUDA/cudaChangeDetection.cuh"
 #include "../../../include/GPU/CUDA/changeDetectionKernel.cuh"
+#include "../../../include/common/helper_timer.h"
+
 #define THREADS_PER_BLOCK 1024
 
 // Variable Declarations
@@ -77,6 +79,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
 	Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
+	float timeOnGPU = 0.0f;
 
 	h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
@@ -96,14 +99,17 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	dim3 blocks((size + (THREADS_PER_BLOCK - 1)) / THREADS_PER_BLOCK);
 	
-	// ! auto start = std::chrono::high_resolution_clock::now();
+	StopWatchInterface* timer = NULL;
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
 
 	detectChanges<<<blocks, THREADS_PER_BLOCK>>>(d_oldImagePixArr, d_newImagePixArr, d_highlightedChangePixArr, threshold, size);
 	
-	// ! auto stop = std::chrono::high_resolution_clock::now();
+	sdkStopTimer(&timer);
+	timeOnGPU = sdkGetTimerValue(&timer);
+	sdkDeleteTimer(&timer);
 
-	// ! auto GPU_Duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	// ! cout << "GPU Duration = " << GPU_Duration.count() << endl;
+	cout << "Time Taken on GPU: " << timeOnGPU << "ms" << endl;
 
 	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
 

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../../common/systemMacros.hpp"
-#include "../../common/dataTypes.hpp"
 
 #if (PLATFORM == 1)
+    #include <windows.h>
     #include <CL/opencl.h>
     #pragma comment(lib, "OpenCL.lib")
 #elif (PLATFORM == 2)
@@ -11,6 +11,8 @@
 #else
     #include <OpenCL/opencl.h>
 #endif
+
+#include "../../common/dataTypes.hpp"
 
 #include <iostream>
 #include <cstdlib>

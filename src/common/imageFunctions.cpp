@@ -121,7 +121,7 @@ void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address)
 		exit(1);
 	} 
 	
-	cout << "Image Saved Successfully at " << address << endl;
+	cout << endl << "Image Saved Successfully at " << address << endl;
 }
 
 

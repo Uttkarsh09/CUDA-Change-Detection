@@ -1,6 +1,5 @@
 #include "../../../include/GPU/CUDA/cudaChangeDetection.cuh"
 #include "../../../include/GPU/CUDA/changeDetectionKernel.cuh"
-#include "../../../include/common/helper_timer.h"
 
 #define THREADS_PER_BLOCK 1024
 
@@ -92,7 +91,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_highlightedChangePixArr, size * sizeof(Pixel));
 
-	// printCUDADeviceProperties();
+	printCUDADeviceProperties();
 
 	cudaMemcpy(d_oldImagePixArr, h_oldImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_newImagePixArr, h_newImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);
@@ -109,8 +108,8 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	timeOnGPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
 
-	cout << "Time Taken on GPU: " << timeOnGPU << "ms" << endl;
-
+	cout << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+ 
 	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
 
 	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
@@ -122,7 +121,6 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	cudaFree(d_newImagePixArr);
 	cudaFree(d_highlightedChangePixArr);
 }
-
 
 void cleanup(void)
 {

@@ -134,7 +134,7 @@ void createOpenCLCommandQueue(void)
 	}
 }
 
-void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
 	// ** Does the job of getting OpenCLPlatformID and and OpenCLDeviceID
 	printOpenCLDeviceProperties();

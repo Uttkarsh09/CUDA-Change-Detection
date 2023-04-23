@@ -26,7 +26,7 @@ void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	timeOnCPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
 	
-	cout << "Time Taken on CPU: " << timeOnCPU << "ms" << endl;
+	cout << "Time Taken on CPU : " << timeOnCPU << " ms" << endl;
 
 	convertPixelArrToBitmap(detectedChanges, highlightedChangePixArr, size);
 

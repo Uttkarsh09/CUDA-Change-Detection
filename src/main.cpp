@@ -7,8 +7,8 @@ int main()
 {
 	ImageData oldImage, newImage;
 
-	oldImage.address = getImagePath("bigImgOld.tif");
-	newImage.address = getImagePath("bigImgNew.tif");
+	oldImage.address = getImagePath("old.png");
+	newImage.address = getImagePath("new.png");
 
 	oldImage.dib = imageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = imageFormatIndependentLoader(newImage.address.c_str(), 0);
@@ -93,5 +93,6 @@ int main()
 	
 	free(CPU_DetectedChangesBitmap);
 	free(GPU_DetectedChangesBitmap);
+	
 	return 0;
 }

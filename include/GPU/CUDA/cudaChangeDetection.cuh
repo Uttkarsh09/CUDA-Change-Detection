@@ -17,5 +17,5 @@
 
 // Function Protoypes
 void printCUDADeviceProperties(void);
-void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);
+void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);

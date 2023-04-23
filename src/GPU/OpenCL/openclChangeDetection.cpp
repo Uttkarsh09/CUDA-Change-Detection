@@ -139,9 +139,9 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	// ** Does the job of getting OpenCLPlatformID and and OpenCLDeviceID
 	printOpenCLDeviceProperties();
 
-	createOpenCLContext();
+	// createOpenCLContext();
 
-	createOpenCLCommandQueue();
+	// createOpenCLCommandQueue();
 
 	cleanup();
 }

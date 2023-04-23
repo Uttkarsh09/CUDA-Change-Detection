@@ -108,7 +108,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	timeOnGPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
 
-	cout << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
  
 	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
 

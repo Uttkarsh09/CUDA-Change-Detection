@@ -27,6 +27,43 @@ int gpuChoice = -1;
 Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
 Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 
+const char* oclSourceCode =
+"__kernel void oclChangeDetection(__global uint8_t *oldImagePixelArr, __global uint8_t *newImagePixelArr, __global uint8_t *highlightedChangePixelArr, uint8_t threshold, int count)" \
+"{ " \
+    "long pixelID = get_global_id(0);" \
+    "uint8_t oldGreyVal, newGreyVal, difference;" \
+
+	"if (pixelId < count)" \
+	"{" \
+		"oldGreyVal = (uint8_t)( "\
+			"(0.3 * (uint8_t)oldImagePixelArr[pixelId].red) +"\
+			"(0.59 * (uint8_t)oldImagePixelArr[pixelId].green) +"\
+			"(0.11 * (uint8_t) oldImagePixelArr[pixelId].blue)"\
+		");"\
+
+		"newGreyVal = (uint8_t)(" \
+			"(0.3 * (uint8_t)newImagePixelArr[pixelId].red) +" \
+			"(0.59 * (uint8_t)newImagePixelArr[pixelId].green) +" \
+			"(0.11 * (uint8_t)newImagePixelArr[pixelId].blue)" \
+		");" \
+
+		"difference = abs(oldGreyVal - newGreyVal);" \
+
+		"if (difference >= threshold)" \
+		"{" \
+			"highlightedChangePixelArr[pixelId].red = 255;" \
+			"highlightedChangePixelArr[pixelId].green = 0;" \
+			"highlightedChangePixelArr[pixelId].blue = 0;" \
+		"}" \
+		"else" \
+		"{" \
+			"highlightedChangePixelArr[pixelId].red = oldGreyVal;" \
+			"highlightedChangePixelArr[pixelId].green = oldGreyVal;" \
+			"highlightedChangePixelArr[pixelId].blue = oldGreyVal;" \
+		"}" \
+	"}" \
+"}";
+
 void getOpenCLPlatforms(void)
 {
 	// Code
@@ -182,20 +219,14 @@ void createOpenCLProgram(const char *kernelFileName)
 	const char* clSourceCharArray = NULL;
 
 	// Code
-	if (!kernelFile.is_open())
-	{
-		cout << endl << "Failed to open " << kernelFileName << " ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// // ** Read from .cl file buffer into outputStringStream
+	// outputStringStream << kernelFile.rdbuf();
 
-	// ** Read from .cl file buffer into outputStringStream
-	outputStringStream << kernelFile.rdbuf();
+	// clSourceContents = outputStringStream.str();
+	// clSourceCharArray = clSourceContents.c_str();
 
-	clSourceContents = outputStringStream.str();
-	clSourceCharArray = clSourceContents.c_str();
-
-	oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&clSourceCharArray, NULL, &result);
+	// oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&clSourceCharArray, NULL, &result);
+	oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&oclSourceCode, NULL, &result);
 	if (result != CL_SUCCESS)
 	{
 		cout << endl << "clCreateProgramWithSource() Failed : " << result << endl;
@@ -296,12 +327,12 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	size_t size = (oldImage->height * oldImage->pitch)/3;
 	float timeOnGPU = 0.0f;
 
-	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
-	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
-
 	h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+
+	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
+	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
 
 	d_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	d_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
@@ -311,47 +342,49 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	createOpenCLCommandQueue();
 
-	createOpenCLBuffer(size);
+	createOpenCLBuffer(size * sizeof(Pixel));
 
 	createOpenCLProgram("oclChangeDetection.cl");
-
+	
 	createOpenCLKernel(threshold, size);
 
 	createOpenCLEnqueueWriteBuffer(size * sizeof(Pixel));
 
-	// Kernel Configuration
-	size_t global_size = 1024;
+	cout << endl << "createOpenCLEnqueueWriteBuffer() Done" << endl;
 
-	// Start Timer
-	StopWatchInterface* timer = NULL;
-	sdkCreateTimer(&timer);
-	sdkStartTimer(&timer);
+	// // Kernel Configuration
+	// size_t global_size = 1024;
 
-	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
-	if (result != CL_SUCCESS)
-	{
-		cout << endl << "clEnqueueNDRangeKernel() Failed : " << result << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// // Start Timer
+	// StopWatchInterface* timer = NULL;
+	// sdkCreateTimer(&timer);
+	// sdkStartTimer(&timer);
 
-	clFinish(oclCommandQueue);
+	// result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
+	// if (result != CL_SUCCESS)
+	// {
+	// 	cout << endl << "clEnqueueNDRangeKernel() Failed : " << result << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	// Stop Timer
-	sdkStopTimer(&timer);
-	timeOnGPU = sdkGetTimerValue(&timer);
-	sdkDeleteTimer(&timer);
+	// clFinish(oclCommandQueue);
 
-	// Read result back from device to host
-	result = clEnqueueReadBuffer(oclCommandQueue, deviceOutput, CL_TRUE, 0, size, h_highlightedChangePixArr, 0, NULL, NULL);
-	if (result != CL_SUCCESS)
-	{
-		cout << endl << "clEnqueueReadBuffer() Failed : " << result << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// // Stop Timer
+	// sdkStopTimer(&timer);
+	// timeOnGPU = sdkGetTimerValue(&timer);
+	// sdkDeleteTimer(&timer);
 
-	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+	// // Read result back from device to host
+	// result = clEnqueueReadBuffer(oclCommandQueue, deviceOutput, CL_TRUE, 0, size, h_highlightedChangePixArr, 0, NULL, NULL);
+	// if (result != CL_SUCCESS)
+	// {
+	// 	cout << endl << "clEnqueueReadBuffer() Failed : " << result << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
+
+	// cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
 	cleanup();
 }

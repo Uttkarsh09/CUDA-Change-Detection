@@ -29,7 +29,7 @@ void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
 void createOpenCLProgram(const char*);
 void createOpenCLBuffer(size_t);
-void createOpenCLKernel(uint8_t*, int);
+void createOpenCLKernel(uint8_t, int);
 void createOpenCLEnqueueWriteBuffer(size_t);
 void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);

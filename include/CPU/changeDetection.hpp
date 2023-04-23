@@ -12,5 +12,6 @@
 #include "../common/dataTypes.hpp"
 #include "../common/imageFunctions.hpp"
 
-
+// Function Protoypes
 void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);
+void cpu_cleanup(void);

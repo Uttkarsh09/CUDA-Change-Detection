@@ -4,6 +4,8 @@
 #define THREADS_PER_BLOCK 1024
 
 // Variable Declarations
+Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
+Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 int gpuChoice = -1;
 
 void printCUDADeviceProperties(void)
@@ -75,8 +77,6 @@ void printCUDADeviceProperties(void)
 
 void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
-	Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
-	Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
 	float timeOnGPU = 0.0f;
 
@@ -107,22 +107,51 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	sdkStopTimer(&timer);
 	timeOnGPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
-
-	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
  
 	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
 
+	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+
 	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
 
-	free(h_oldImagePixArr);
-	free(h_newImagePixArr);
-	free(h_highlightedChangePixArr);
-	cudaFree(d_oldImagePixArr);
-	cudaFree(d_newImagePixArr);
-	cudaFree(d_highlightedChangePixArr);
+	cleanup();
 }
 
 void cleanup(void)
 {
-	cout << endl << "Placeholder Cleanup Message" << endl;
+	if (d_highlightedChangePixArr)
+	{
+		cudaFree(d_highlightedChangePixArr);
+		d_highlightedChangePixArr = NULL;
+	}
+
+	if (d_newImagePixArr)
+	{
+		cudaFree(d_newImagePixArr);
+		d_newImagePixArr = NULL;
+	}
+
+	if (d_oldImagePixArr)
+	{
+		cudaFree(d_oldImagePixArr);
+		d_oldImagePixArr = NULL;
+	}
+
+	if (h_highlightedChangePixArr)
+	{
+		free(h_highlightedChangePixArr);
+		h_highlightedChangePixArr = NULL;
+	}
+
+	if (h_newImagePixArr)
+	{
+		free(h_newImagePixArr);
+		h_newImagePixArr = NULL;
+	}
+
+	if (h_oldImagePixArr)
+	{
+		free(h_oldImagePixArr);
+		h_oldImagePixArr = NULL;
+	}
 }

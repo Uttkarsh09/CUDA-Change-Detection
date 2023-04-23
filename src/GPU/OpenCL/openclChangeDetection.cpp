@@ -1,4 +1,5 @@
 #include "../../../include/GPU/OpenCL/openclChangeDetection.hpp"
+#include "../../../include/common/helper_timer.h"
 
 // Variable Declarations
 cl_platform_id oclPlatformId;
@@ -17,10 +18,18 @@ cl_kernel oclKernel;
 
 cl_int result;
 
+cl_mem deviceInput1 = NULL;
+cl_mem deviceInput2 = NULL;
+cl_mem deviceOutput = NULL;
+
 int gpuChoice = -1;
+
+Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
+Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 
 void getOpenCLPlatforms(void)
 {
+	// Code
     result = clGetPlatformIDs(1, &oclPlatformId, NULL);
 	if (result != CL_SUCCESS)
 	{
@@ -32,6 +41,7 @@ void getOpenCLPlatforms(void)
 
 void getOpenCLDevices(void)
 {
+	// Code
 	result = clGetDeviceIDs(oclPlatformId, CL_DEVICE_TYPE_GPU, 0, NULL, &devCount);
 	if (result != CL_SUCCESS)
 	{
@@ -114,6 +124,7 @@ void printOpenCLDeviceProperties(void)
 
 void createOpenCLContext(void)
 {
+	// Code
     oclContext = clCreateContext(NULL, 1, &oclDeviceId, NULL, NULL, &result);
 	if (result != CL_SUCCESS)
 	{
@@ -125,6 +136,7 @@ void createOpenCLContext(void)
 
 void createOpenCLCommandQueue(void)
 {
+	// Code
 	oclCommandQueue = clCreateCommandQueue(oclContext, oclDeviceId, 0, &result);
 	if (result != CL_SUCCESS)
 	{
@@ -134,24 +146,280 @@ void createOpenCLCommandQueue(void)
 	}
 }
 
+void createOpenCLBuffer(size_t arrSize)
+{
+	deviceInput1 = clCreateBuffer(oclContext, CL_MEM_READ_ONLY, arrSize, NULL, &result);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clCreateBuffer() Failed For 1st Input Array : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	deviceInput2 = clCreateBuffer(oclContext, CL_MEM_READ_ONLY, arrSize, NULL, &result);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clCreateBuffer() Failed For 2nd Input Array : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	deviceOutput = clCreateBuffer(oclContext, CL_MEM_READ_ONLY, arrSize, NULL, &result);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clCreateBuffer() Failed For 3rd Input Array : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+}
+
+void createOpenCLProgram(const char *kernelFileName)
+{
+	// Variable Declarations
+	ifstream kernelFile(kernelFileName, ios::in);
+	ostringstream outputStringStream;
+	string clSourceContents;
+	const char* clSourceCharArray = NULL;
+
+	// Code
+	if (!kernelFile.is_open())
+	{
+		cout << endl << "Failed to open " << kernelFileName << " ... Exiting !!!" << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	// ** Read from .cl file buffer into outputStringStream
+	outputStringStream << kernelFile.rdbuf();
+
+	clSourceContents = outputStringStream.str();
+	clSourceCharArray = clSourceContents.c_str();
+
+	oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&clSourceCharArray, NULL, &result);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clCreateProgramWithSource() Failed : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	// ** Build Program
+	result = clBuildProgram(oclProgram, 0, NULL, NULL, NULL, NULL);
+	if (result != CL_SUCCESS)
+	{
+		size_t len;
+		char buffer[2048];
+
+		clGetProgramBuildInfo(oclProgram, oclDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+		cout << endl << "Program Build Log : " << buffer << endl;
+		cout << endl << "clBuildProgram() Failed : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+}
+
+void createOpenCLKernel(uint8_t threshold, int count)
+{
+	oclKernel = clCreateKernel(oclProgram, "oclChangeDetection", &result);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clCreateKernel() Failed : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clSetKernelArg(oclKernel, 0, sizeof(cl_mem), (void*)&deviceInput1);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clSetKernelArg() Failed For 1st Argument : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clSetKernelArg(oclKernel, 1, sizeof(cl_mem), (void*)&deviceInput2);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clSetKernelArg() Failed For 2nd Argument : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clSetKernelArg(oclKernel, 2, sizeof(cl_mem), (void*)&deviceOutput);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clSetKernelArg() Failed For 3rd Argument : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clSetKernelArg(oclKernel, 3, sizeof(cl_uchar), (void*)&threshold);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clSetKernelArg() Failed For 4th Argument : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clSetKernelArg(oclKernel, 4, sizeof(cl_int), (void*)&count);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clSetKernelArg() Failed For 5th Argument : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+}
+
+void createOpenCLEnqueueWriteBuffer(size_t writeSize)
+{
+	result = clEnqueueWriteBuffer(oclCommandQueue, deviceInput1, CL_FALSE, 0, writeSize, d_oldImagePixArr, 0, NULL, NULL);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clEnqueueWriteBuffer() Failed For 1st Input Device Buffer : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	result = clEnqueueWriteBuffer(oclCommandQueue, deviceInput2, CL_FALSE, 0, writeSize, d_newImagePixArr, 0, NULL, NULL);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clEnqueueWriteBuffer() Failed For 2nd Input Device Buffer : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+}
+
 void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
-	// ** Does the job of getting OpenCLPlatformID and and OpenCLDeviceID
+	// Code
 	printOpenCLDeviceProperties();
 
-	// createOpenCLContext();
+	size_t size = (oldImage->height * oldImage->pitch)/3;
+	float timeOnGPU = 0.0f;
 
-	// createOpenCLCommandQueue();
+	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
+	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
+
+	h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+
+	d_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	d_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	d_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+
+	createOpenCLContext();
+
+	createOpenCLCommandQueue();
+
+	createOpenCLBuffer(size);
+
+	createOpenCLProgram("oclChangeDetection.cl");
+
+	createOpenCLKernel(threshold, size);
+
+	createOpenCLEnqueueWriteBuffer(size * sizeof(Pixel));
+
+	// Kernel Configuration
+	size_t global_size = 1024;
+
+	// Start Timer
+	StopWatchInterface* timer = NULL;
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+
+	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clEnqueueNDRangeKernel() Failed : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	clFinish(oclCommandQueue);
+
+	// Stop Timer
+	sdkStopTimer(&timer);
+	timeOnGPU = sdkGetTimerValue(&timer);
+	sdkDeleteTimer(&timer);
+
+	// Read result back from device to host
+	result = clEnqueueReadBuffer(oclCommandQueue, deviceOutput, CL_TRUE, 0, size, h_highlightedChangePixArr, 0, NULL, NULL);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clEnqueueReadBuffer() Failed : " << result << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+
+	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
 	cleanup();
 }
 
 void cleanup(void)
 {
-    cout << endl << "Placeholder Cleanup Message" << endl;
+	if (oclKernel)
+	{
+		clReleaseKernel(oclKernel);
+		oclKernel = NULL;
+	}
+	
+	if (oclProgram)
+	{
+		clReleaseProgram(oclProgram);
+		oclProgram = NULL;
+	}
+
+	if (oclCommandQueue)
+	{
+		clReleaseCommandQueue(oclCommandQueue);
+		oclCommandQueue = NULL;
+	}
+
+	if (oclContext)
+	{
+		clReleaseContext(oclContext);
+		oclContext = NULL;
+	}
 
 	if (oclDeviceIds)
 	{
 		free(oclDeviceIds);
+	}
+
+    if (d_highlightedChangePixArr)
+	{
+		free(d_highlightedChangePixArr);
+		d_highlightedChangePixArr = NULL;
+	}
+
+	if (d_newImagePixArr)
+	{
+		free(d_newImagePixArr);
+		d_newImagePixArr = NULL;
+	}
+
+	if (d_oldImagePixArr)
+	{
+		free(d_oldImagePixArr);
+		d_oldImagePixArr = NULL;
+	}
+
+	if (h_highlightedChangePixArr)
+	{
+		free(h_highlightedChangePixArr);
+		h_highlightedChangePixArr = NULL;
+	}
+
+	if (h_newImagePixArr)
+	{
+		free(h_newImagePixArr);
+		h_newImagePixArr = NULL;
+	}
+
+	if (h_oldImagePixArr)
+	{
+		free(h_oldImagePixArr);
+		h_oldImagePixArr = NULL;
 	}
 }

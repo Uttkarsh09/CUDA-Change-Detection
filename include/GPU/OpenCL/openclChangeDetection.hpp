@@ -13,8 +13,11 @@
 #endif
 
 #include "../../common/dataTypes.hpp"
+#include "../../common/imageFunctions.hpp"
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstdlib>
 using namespace std;
 
@@ -24,5 +27,9 @@ void getOpenCLDevices(void);
 void printOpenCLDeviceProperties(void);
 void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
+void createOpenCLProgram(const char*);
+void createOpenCLBuffer(size_t);
+void createOpenCLKernel(uint8_t*, int);
+void createOpenCLEnqueueWriteBuffer(size_t);
 void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);

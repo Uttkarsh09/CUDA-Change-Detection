@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\GPU",
+    "\\src\\GPU\\OpenCL"
+  ],
+  "SelectedNode": "\\src\\GPU\\OpenCL\\openclChangeDetection.cpp",
+  "PreviewInSolutionExplorer": false
+}

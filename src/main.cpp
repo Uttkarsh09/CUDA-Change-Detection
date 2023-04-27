@@ -3,7 +3,7 @@
 
 #include "../include/headers.hpp"
 
-int main()
+int main(void)
 {
 	ImageData oldImage, newImage;
 
@@ -91,8 +91,8 @@ int main()
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
 	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
 	
-	free(CPU_DetectedChangesBitmap);
 	free(GPU_DetectedChangesBitmap);
+	free(CPU_DetectedChangesBitmap);
 	
 	return 0;
 }

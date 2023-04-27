@@ -29,6 +29,10 @@ void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
 void createOpenCLProgram(const char*);
 void createOpenCLImageStructure(ImageData*, ImageData*);
-void createOpenCLKernel(ImageData*, ImageData*, size_t, uint8_t, int);
+void createOpenCLKernel(int, int);
 void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);
+
+// Utility Functions
+size_t roundUp(int, unsigned int);
+string getErrorString(cl_int);

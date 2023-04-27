@@ -18,19 +18,21 @@ cl_kernel oclKernel;
 
 cl_int result;
 
-cl_mem deviceInput1 = NULL;
-cl_mem deviceInput2 = NULL;
-cl_mem deviceOutput = NULL;
+cl_image_desc oclImageDescriptor_oldImage;
+cl_image_desc oclImageDescriptor_newImage;
+cl_image_desc oclImageDescriptor_highlightedChanges;
+cl_image_format oclImageFormat;
 
 int gpuChoice = -1;
 
 Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
-Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
+// Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
+cl_mem d_oldImage, d_newImage, d_highlightedChanges;
 
 ofstream logFile;
 
 const char* oclSourceCode =
-"__kernel void oclChangeDetection(__global uint8 *oldImagePixelArr, __global uint8 *newImagePixelArr, __global uint8 *highlightedChangePixelArr, unsigned char threshold, int count)" \
+"__kernel void oclChangeDetection(__read_only image2d_t oldImage, __read_only image2d_t newImage, __write_only image2d_t highlightedChanges, unsigned char threshold, int count)" \
 "{ " \
     "long pixelId = get_global_id(0);" \
     "unsigned char oldGreyVal, newGreyVal, difference;" \
@@ -178,28 +180,73 @@ void createOpenCLCommandQueue(void)
 	}
 }
 
-void createOpenCLBuffer(size_t arrSize)
+void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 {
-	deviceInput1 = clCreateBuffer(oclContext, CL_MEM_READ_ONLY, arrSize, NULL, &result);
+	// Code
+
+	// Initialize cl_image_desc structure for old image
+	oclImageDescriptor_oldImage.image_type = CL_MEM_OBJECT_IMAGE2D;
+	oclImageDescriptor_oldImage.image_width = oldImage->width;
+	oclImageDescriptor_oldImage.image_height = oldImage->height;
+	oclImageDescriptor_oldImage.image_depth = 0;
+	oclImageDescriptor_oldImage.image_array_size = 0;
+	oclImageDescriptor_oldImage.image_row_pitch = 0;
+	oclImageDescriptor_oldImage.image_slice_pitch = 0;
+	oclImageDescriptor_oldImage.num_mip_levels = 0;
+	oclImageDescriptor_oldImage.num_samples = 0;
+	oclImageDescriptor_oldImage.buffer = NULL;
+
+	// Initialize cl_image_desc structure for new image
+	oclImageDescriptor_newImage.image_type = CL_MEM_OBJECT_IMAGE2D;
+	oclImageDescriptor_newImage.image_width = newImage->width;
+	oclImageDescriptor_newImage.image_height = newImage->height;
+	oclImageDescriptor_newImage.image_depth = 0;
+	oclImageDescriptor_newImage.image_array_size = 0;
+	oclImageDescriptor_newImage.image_row_pitch = 0;
+	oclImageDescriptor_newImage.image_slice_pitch = 0;
+	oclImageDescriptor_newImage.num_mip_levels = 0;
+	oclImageDescriptor_newImage.num_samples = 0;
+	oclImageDescriptor_newImage.buffer = NULL;
+
+	// Initialize cl_image_desc structure for highlighted changes
+	oclImageDescriptor_highlightedChanges.image_type = CL_MEM_OBJECT_IMAGE2D;
+	oclImageDescriptor_highlightedChanges.image_width = newImage->width;
+	oclImageDescriptor_highlightedChanges.image_height = newImage->height;
+	oclImageDescriptor_highlightedChanges.image_depth = 0;
+	oclImageDescriptor_highlightedChanges.image_array_size = 0;
+	oclImageDescriptor_highlightedChanges.image_row_pitch = 0;
+	oclImageDescriptor_highlightedChanges.image_slice_pitch = 0;
+	oclImageDescriptor_highlightedChanges.num_mip_levels = 0;
+	oclImageDescriptor_highlightedChanges.num_samples = 0;
+	oclImageDescriptor_highlightedChanges.buffer = NULL;
+
+	// Initialize cl_image_format structure
+	oclImageFormat.image_channel_order = CL_RGBA;
+	oclImageFormat.image_channel_data_type = CL_UNSIGNED_INT8;
+
+	// Create Old Input Image
+	d_oldImage = clCreateImage(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, &oclImageDescriptor_oldImage, (void*)h_oldImagePixArr, &result);
 	if (result != CL_SUCCESS)
 	{
-		cerr << endl << "clCreateBuffer() Failed For 1st Input Array : " << result << endl;
+		cerr << endl << "clCreateImage() Failed For Old Input Image ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
 
-	deviceInput2 = clCreateBuffer(oclContext, CL_MEM_READ_ONLY, arrSize, NULL, &result);
+	// Create New Input Image
+	d_newImage = clCreateImage(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, &oclImageDescriptor_newImage, (void*)h_newImagePixArr, &result);
 	if (result != CL_SUCCESS)
 	{
-		cerr << endl << "clCreateBuffer() Failed For 2nd Input Array : " << result << endl;
+		cerr << endl << "clCreateImage() Failed For New Input Image ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
 
-	deviceOutput = clCreateBuffer(oclContext, CL_MEM_WRITE_ONLY, arrSize, NULL, &result);
+	// Create Ouput Image (Highlighted Changes)
+	d_highlightedChanges = clCreateImage(oclContext, CL_MEM_WRITE_ONLY, &oclImageFormat, &oclImageDescriptor_highlightedChanges, NULL, &result);
 	if (result != CL_SUCCESS)
 	{
-		cerr << endl << "clCreateBuffer() Failed For 3rd Input Array : " << result << endl;
+		cerr << endl << "clCreateImage() Failed For Ouput Image ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
@@ -258,7 +305,7 @@ void createOpenCLProgram(const char *kernelFileName)
 	}
 }
 
-void createOpenCLKernel(size_t size, unsigned char threshold, int count)
+void createOpenCLKernel(ImageData* oldImage, ImageData* newImage, size_t size, unsigned char threshold, int count)
 {
 	oclKernel = clCreateKernel(oclProgram, "oclChangeDetection", &result);
 	if (result != CL_SUCCESS)
@@ -268,7 +315,7 @@ void createOpenCLKernel(size_t size, unsigned char threshold, int count)
 		exit(EXIT_FAILURE);
 	}
 
-	result = clSetKernelArg(oclKernel, 0, sizeof(size), d_oldImagePixArr);
+	result = clSetKernelArg(oclKernel, 0, sizeof(cl_mem), d_oldImage);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clSetKernelArg() Failed For 1st Argument : " << result << endl;
@@ -276,7 +323,7 @@ void createOpenCLKernel(size_t size, unsigned char threshold, int count)
 		exit(EXIT_FAILURE);
 	}
 
-	result = clSetKernelArg(oclKernel, 1, sizeof(size), d_newImagePixArr);
+	result = clSetKernelArg(oclKernel, 1, sizeof(cl_mem), d_newImage);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clSetKernelArg() Failed For 2nd Argument : " << result << endl;
@@ -284,7 +331,7 @@ void createOpenCLKernel(size_t size, unsigned char threshold, int count)
 		exit(EXIT_FAILURE);
 	}
 
-	result = clSetKernelArg(oclKernel, 2, sizeof(size), d_highlightedChangePixArr);
+	result = clSetKernelArg(oclKernel, 2, sizeof(cl_mem), d_highlightedChanges);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clSetKernelArg() Failed For 3rd Argument : " << result << endl;
@@ -304,25 +351,6 @@ void createOpenCLKernel(size_t size, unsigned char threshold, int count)
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clSetKernelArg() Failed For 5th Argument : " << result << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
-}
-
-void createOpenCLEnqueueWriteBuffer(size_t writeSize)
-{
-	result = clEnqueueWriteBuffer(oclCommandQueue, deviceInput1, CL_FALSE, 0, writeSize, d_oldImagePixArr, 0, NULL, NULL);
-	if (result != CL_SUCCESS)
-	{
-		cout << endl << "clEnqueueWriteBuffer() Failed For 1st Input Device Buffer : " << result << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
-
-	result = clEnqueueWriteBuffer(oclCommandQueue, deviceInput2, CL_FALSE, 0, writeSize, d_newImagePixArr, 0, NULL, NULL);
-	if (result != CL_SUCCESS)
-	{
-		cout << endl << "clEnqueueWriteBuffer() Failed For 2nd Input Device Buffer : " << result << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
@@ -365,43 +393,43 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
 	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
 
-	d_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (d_oldImagePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for d_oldImagePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// d_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (d_oldImagePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for d_oldImagePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	d_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (h_highlightedChangePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for d_newImagePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// d_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (h_highlightedChangePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for d_newImagePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	d_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (h_highlightedChangePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for d_highlightedChangePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// d_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (h_highlightedChangePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for d_highlightedChangePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 
 	createOpenCLContext();
 
 	createOpenCLCommandQueue();
 
-	createOpenCLProgram("oclChangeDetection.cl");
+	createOpenCLImageStructure(oldImage, newImage);
 
-	//createOpenCLBuffer(size * sizeof(Pixel));
+	// createOpenCLProgram("oclChangeDetection.cl");
 	
-	createOpenCLKernel(size * sizeof(Pixel), (unsigned char)threshold, size);
+	// createOpenCLKernel(size * sizeof(Pixel), (unsigned char)threshold, size);
 
 	//createOpenCLEnqueueWriteBuffer(size * sizeof(Pixel));
 
-	cout << endl << "createOpenCLKernel() Done" << endl;
+	cout << endl << "createOpenCLImageStructure() Done" << endl;
 
 	// // Kernel Configuration
 	// size_t global_size = 1024;
@@ -442,6 +470,24 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 void cleanup(void)
 {
+	if (d_highlightedChanges)
+	{
+		clReleaseMemObject(d_highlightedChanges);
+		d_highlightedChanges = NULL;
+	}
+
+	if (d_newImage)
+	{
+		clReleaseMemObject(d_newImage);
+		d_newImage = NULL;
+	}
+
+	if (d_oldImage)
+	{
+		clReleaseMemObject(d_oldImage);
+		d_oldImage = NULL;
+	}
+
 	if (oclKernel)
 	{
 		clReleaseKernel(oclKernel);
@@ -469,24 +515,6 @@ void cleanup(void)
 	if (oclDeviceIds)
 	{
 		free(oclDeviceIds);
-	}
-
-    if (d_highlightedChangePixArr)
-	{
-		free(d_highlightedChangePixArr);
-		d_highlightedChangePixArr = NULL;
-	}
-
-	if (d_newImagePixArr)
-	{
-		free(d_newImagePixArr);
-		d_newImagePixArr = NULL;
-	}
-
-	if (d_oldImagePixArr)
-	{
-		free(d_oldImagePixArr);
-		d_oldImagePixArr = NULL;
 	}
 
 	if (h_highlightedChangePixArr)

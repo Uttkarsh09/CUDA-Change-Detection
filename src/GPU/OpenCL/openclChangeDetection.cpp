@@ -324,7 +324,7 @@ void createOpenCLKernel(int threshold, int count)
 	result = clSetKernelArg(oclKernel, 3, sizeof(cl_int), (void*)&threshold);
 	if (result != CL_SUCCESS)
 	{
-		cerr << endl << "clSetKernelArg() Failed For 4th Argument : " << result << endl;
+		cerr << endl << "clSetKernelArg() Failed For 4th Argument : " << getErrorString(result) << " ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
@@ -332,7 +332,7 @@ void createOpenCLKernel(int threshold, int count)
 	result = clSetKernelArg(oclKernel, 4, sizeof(cl_int), (void*)&count);
 	if (result != CL_SUCCESS)
 	{
-		cerr << endl << "clSetKernelArg() Failed For 5th Argument : " << result << endl;
+		cerr << endl << "clSetKernelArg() Failed For 5th Argument : " << getErrorString(result) << " ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
@@ -393,22 +393,43 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	createOpenCLImageStructure(oldImage, newImage);
 
 	createOpenCLProgram("oclChangeDetection.cl");
-	
+
 	createOpenCLKernel(threshold, size);
 
+	size_t localSize;
+	result = clGetKernelWorkGroupInfo(oclKernel, oclDeviceId, CL_KERNEL_WORK_GROUP_SIZE, 0, &localSize, NULL);
+	if (result != CL_SUCCESS)
+	{
+		cout << endl << "clGetKernelWorkGroupInfo() Failed : " << getErrorString(result) << " ... Exiting !!!" << endl;
+		cleanup();
+		exit(EXIT_FAILURE);
+	}
+	cout << "CL_KERNEL_WORK_GROUP_SIZE  = " << localSize << endl;
+
+	// ! ** IMPORTANT ***
+	// ! CL_KERNEL_WORK_GROUP_SIZE <= CL_DEVICE_MAX_WORK_GROUP_SIZE
+
 	// Kernel Configuration
-	size_t localWorkSize[2] = {256, 256};
-	size_t globalWorkSize[2] = {
-		roundUp(localWorkSize[0], oldImage->width),
-		roundUp(localWorkSize[1], oldImage->height)
-	};
+	//size_t localWorkSize[2] = {256, 256};
+	// size_t globalWorkSize[2] = {
+	// 	roundUp(localWorkSize[0], oldImage->width),
+	// 	roundUp(localWorkSize[1], oldImage->height)
+	// };
+
+	// size_t globalWorkSize[2] = {
+	// 	oldImage->width >= localWorkSize[0] ? oldImage->width : localWorkSize[0],
+	// 	oldImage->height >= localWorkSize[1] ? oldImage->height : localWorkSize[1]
+	// };
+
+	size_t global_work_size[2] = {2048, 2048};
+	//size_t local_work_size[2] = {256, 256};
 
 	// Start Timer
 	StopWatchInterface* timer = NULL;
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
 
-	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, globalWorkSize, 0, 0, NULL, NULL);
+	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 	if (result != CL_SUCCESS)
 	{
 		cout << endl << "clEnqueueNDRangeKernel() Failed : " << getErrorString(result) << " ... Exiting !!!" << endl;

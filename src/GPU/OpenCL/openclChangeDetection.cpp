@@ -28,46 +28,40 @@ cl_mem d_oldImage, d_newImage, d_highlightedChanges;
 ofstream logFile;
 
 const char* oclSourceCode =
-"__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;" \
-
-"__kernel void oclChangeDetection(__read_only image2d_t oldImage, __read_only image2d_t newImage, __write_only image2d_t highlightedChanges, int threshold, int count)" \
-"{ " \
-    
-	"int2 globalId = (int2)(get_global_id(0), get_global_id(1));" \
-	"uint4 oldImageGrayScale, newImageGrayScale, finalPixelColor;" \
-	"uint oldGrayColor, newGrayColor, difference;" \
-
-	"if (all(globalId < count))" \
+	
+	"__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;" \
+	
+	"__kernel void rgbToGrayScale(__read_only image2d_t inputOld, __read_only image2d_t inputNew, __write_only image2d_t output, int threshold)" \
 	"{" \
-		"uint4 oldImagePixels = read_imageui(oldImage, sampler, globalId);" \
-		"float4 oldImageColor = convert_float4(oldImagePixels) / 255;" \
-		"oldImageColor.xyz = (0.3 * oldImageColor.x) + (0.59 * oldImageColor.y) + (0.11 * oldImageColor.z);" \
-		"oldImageGrayScale = convert_uint4_rte(oldImageColor * 255);" \
-		"oldGrayColor = oldImageGrayScale.x + oldImageGrayScale.y + oldImageGrayScale.z;" \
+		"int2 gid = (int2)(get_global_id(0), get_global_id(1));" \
+		
+		"uint4 oldPixel, newPixel, finalPixelColor;" \
+		"uint oldGrayVal, newGrayVal, difference;" \
+		
+		"int2 sizeOld = get_image_dim(inputOld);" \
+		"int2 sizeNew = get_image_dim(inputNew);" \
 
-		"uint4 newImagePixels = read_imageui(newImage, sampler, globalId);" \
-		"float4 newImageColor = convert_float4(newImagePixels) / 255;" \
-		"newImageColor.xyz = (0.3 * newImageColor.x) + (0.59 * newImageColor.y) + (0.11 * newImageColor.z);" \
-		"newImageGrayScale = convert_uint4_rte(newImageColor * 255);" \
-		"newGrayColor = newImageGrayScale.x + newImageGrayScale.y + newImageGrayScale.z;" \
+		"if (all(gid < sizeOld) && all(gid < sizeNew))" \
+		"{" \
+			"oldPixel = read_imageui(inputOld, sampler, gid);" \
+			"oldGrayVal = (0.3 * oldPixel.x) + (0.59 * oldPixel.y) + (0.11 * oldPixel.z);" \
+			"newPixel = read_imageui(inputNew, sampler, gid);" \
+			"newGrayVal = (0.3 * newPixel.x) + (0.59 * newPixel.y) + (0.11 * newPixel.z);" \
+		"}" \
 
-		"difference = abs(oldGrayColor - newGrayColor);" \
+		"difference = abs_diff(oldGrayVal, newGrayVal);" \
 
 		"if (difference >= threshold)" \
 		"{" \
-			"finalPixelColor = (uint4)(1, 0, 0, 1);" \
+			"finalPixelColor = (uint4)(0, 0, 255, 255);" \
 		"}" \
 		"else" \
 		"{" \
-			"finalPixelColor = oldImageGrayScale;" \
+			"finalPixelColor = (uint4)(oldGrayVal, oldGrayVal, oldGrayVal, 255);" \
 		"}" \
 		
-		"write_imageui(highlightedChanges, globalId, finalPixelColor);" \
-
-	"}" \
-
-
-"}";
+		"write_imageui(output, gid, finalPixelColor);" \
+	"}";
 
 void getOpenCLPlatforms(void)
 {
@@ -202,11 +196,11 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 	// Code
 
 	// Initialize cl_image_format structure
-	oclImageFormat.image_channel_order = CL_RGB;
+	oclImageFormat.image_channel_order = CL_RGBA;
 	oclImageFormat.image_channel_data_type = CL_UNSIGNED_INT8;
 
 	// Create Old Input Image
-	d_oldImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, oldImage->width, oldImage->height, 0, (void*)h_oldImagePixArr, &result);
+	d_oldImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, oldImage->width, oldImage->height, 0, h_oldImagePixArr, &result);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clCreateImage2D() Failed For Old Input Image : " << getErrorString(result) << " ... Exiting !!!" << endl;
@@ -215,7 +209,7 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 	}
 
 	// Create New Input Image
-	d_newImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, newImage->width, newImage->height, 0, (void*)h_newImagePixArr, &result);
+	d_newImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, newImage->width, newImage->height, 0, h_newImagePixArr, &result);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clCreateImage2D() Failed For New Input Image : " << getErrorString(result) << " ... Exiting !!!" << endl;
@@ -328,14 +322,6 @@ void createOpenCLKernel(int threshold, int count)
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
-
-	result = clSetKernelArg(oclKernel, 4, sizeof(cl_int), (void*)&count);
-	if (result != CL_SUCCESS)
-	{
-		cerr << endl << "clSetKernelArg() Failed For 5th Argument : " << getErrorString(result) << " ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
 }
 
 size_t roundUp(int localSize, unsigned int globalSize)
@@ -394,42 +380,22 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	createOpenCLProgram("oclChangeDetection.cl");
 
-	createOpenCLKernel(threshold, size);
-
-	size_t localSize;
-	result = clGetKernelWorkGroupInfo(oclKernel, oclDeviceId, CL_KERNEL_WORK_GROUP_SIZE, 0, &localSize, NULL);
-	if (result != CL_SUCCESS)
-	{
-		cout << endl << "clGetKernelWorkGroupInfo() Failed : " << getErrorString(result) << " ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
-	cout << "CL_KERNEL_WORK_GROUP_SIZE  = " << localSize << endl;
+	createOpenCLKernel(threshold);
 
 	// ! ** IMPORTANT ***
 	// ! CL_KERNEL_WORK_GROUP_SIZE <= CL_DEVICE_MAX_WORK_GROUP_SIZE
 
 	// Kernel Configuration
-	//size_t localWorkSize[2] = {256, 256};
-	// size_t globalWorkSize[2] = {
-	// 	roundUp(localWorkSize[0], oldImage->width),
-	// 	roundUp(localWorkSize[1], oldImage->height)
-	// };
-
-	// size_t globalWorkSize[2] = {
-	// 	oldImage->width >= localWorkSize[0] ? oldImage->width : localWorkSize[0],
-	// 	oldImage->height >= localWorkSize[1] ? oldImage->height : localWorkSize[1]
-	// };
-
-	size_t global_work_size[2] = {2048, 2048};
-	//size_t local_work_size[2] = {256, 256};
+	size_t localSize[2] = {32, 32};
+	//size_t globalSize[2] = {imageWidth, imageHeight};
+	size_t globalSize[2] = {(unsigned int)oldImage->width, (unsigned int)oldImage->height};
 
 	// Start Timer
 	StopWatchInterface* timer = NULL;
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
 
-	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, globalSize, localSize, 0, NULL, NULL);
 	if (result != CL_SUCCESS)
 	{
 		cout << endl << "clEnqueueNDRangeKernel() Failed : " << getErrorString(result) << " ... Exiting !!!" << endl;

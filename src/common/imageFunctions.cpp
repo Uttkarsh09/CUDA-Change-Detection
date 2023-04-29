@@ -1,18 +1,18 @@
 #include "../../include/common/imageFunctions.hpp"
 
-string getImagePath(string imageName)
-{
-	string imageDirectory;
-	filesystem::path currentPath = filesystem::current_path();
+string getOSPath(vector<string> paths){
+	string dirSeperator;
 	
-	if (PLATFORM == 1) 					
-		imageDirectory = "images\\";	// Windows
-	else
-		imageDirectory = "images/";		// Linux and macOS
-	
-	filesystem::path imagePath =  currentPath / imageDirectory / imageName;
+	if(PLATFORM == 1) dirSeperator = "\\";
+	else dirSeperator = "/";
 
-	return imagePath.string();
+	string OSPath = ".";
+
+	for(string &path : paths){
+		OSPath += dirSeperator + path;
+	}
+
+	return OSPath;
 }
 
 

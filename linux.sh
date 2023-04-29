@@ -18,4 +18,9 @@ else
 fi
 
 cd ..
-./detectChanges
+
+./detectChanges 1024
+./detectChanges 2048
+./detectChanges 4096
+./detectChanges 8192
+./detectChanges 10000

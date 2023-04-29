@@ -3,12 +3,13 @@
 
 #include "../include/headers.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
 	ImageData oldImage, newImage;
+	string imageResolution = argv[1];
 
-	oldImage.address = getImagePath("bigImgOld.tif");
-	newImage.address = getImagePath("bigImgNew.tif");
+	oldImage.address = getOSPath({"images", "cropped", imageResolution, imageResolution+"_old.png"});
+	newImage.address = getOSPath({"images", "cropped", imageResolution, imageResolution+"_new.png"});
 
 	oldImage.dib = imageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = imageFormatIndependentLoader(newImage.address.c_str(), 0);
@@ -54,15 +55,15 @@ int main()
 	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
 	string CPU_ImageAddress, GPU_ImageAddress;
 	
-	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.tif");
-	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.tif");
+	CPU_ImageAddress = getOSPath({"images", "cropped", imageResolution, imageResolution+"_CPU_Highlighted_Changes.png"});
+	GPU_ImageAddress = getOSPath({"images", "cropped", imageResolution, imageResolution+"_GPU_Highlighted_Changes.png"});
 
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 
+	cout << "~~~~~~~~~~~~ " + imageResolution + " ~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
 	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);	
-	
 
 	CPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
 		CPU_DetectedChangesBitmap, 
@@ -90,6 +91,7 @@ int main()
 
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
 	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
 	
 	free(CPU_DetectedChangesBitmap);
 	free(GPU_DetectedChangesBitmap);

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <filesystem>
 #include <string>
+#include <vector>
 using namespace std;
 
 #include "devicePlatform.hpp"
@@ -13,8 +14,6 @@ using namespace std;
 #if (PLATFORM == 1)
     #pragma comment(lib, "FreeImage.lib")
 #endif
-
-string getImagePath(string);
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message);
 
@@ -29,3 +28,5 @@ void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address);
 void convertBitmapToPixelArr(Pixel *pixelArr, uint8_t *bitmap, size_t size);
 
 void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size);
+
+string getOSPath(vector<string>);

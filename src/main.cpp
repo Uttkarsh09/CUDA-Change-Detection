@@ -1,6 +1,3 @@
-// * dib -> Device Independent Bitmap - bitmap datatyp of FreeImage
-// * bitmap -> normal uint8_t bitmap (array of uint8_t)
-
 #include "../include/headers.hpp"
 
 int main(int argc, char* argv[])
@@ -17,9 +14,6 @@ int main(int argc, char* argv[])
 
 	populateImageData(&oldImage);
 	populateImageData(&newImage);
-
-	// printImageData(&oldImage);
-	// printImageData(&newImage);
 
 	if((oldImage.height != newImage.height) || (oldImage.width != newImage.width))
 	{

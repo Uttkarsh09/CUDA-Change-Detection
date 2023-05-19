@@ -8,8 +8,8 @@ int main(int argc, char *argv[])
 	ImageData oldImage, newImage;
 	string imageResolution = argv[1];
 
-	oldImage.address = getOSPath({"images", "cropped", imageResolution, imageResolution+"_old.png"});
-	newImage.address = getOSPath({"images", "cropped", imageResolution, imageResolution+"_new.png"});
+	oldImage.address = getOSPath({"images", imageResolution, imageResolution+"_old.png"});
+	newImage.address = getOSPath({"images", imageResolution, imageResolution+"_new.png"});
 
 	oldImage.dib = imageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = imageFormatIndependentLoader(newImage.address.c_str(), 0);
@@ -55,13 +55,13 @@ int main(int argc, char *argv[])
 	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
 	string CPU_ImageAddress, GPU_ImageAddress;
 	
-	CPU_ImageAddress = getOSPath({"images", "cropped", imageResolution, imageResolution+"_CPU_Highlighted_Changes.png"});
-	GPU_ImageAddress = getOSPath({"images", "cropped", imageResolution, imageResolution+"_GPU_Highlighted_Changes.png"});
+	CPU_ImageAddress = getOSPath({"images", imageResolution, imageResolution+"_CPU_Highlighted_Changes.png"});
+	GPU_ImageAddress = getOSPath({"images", imageResolution, imageResolution+"_GPU_Highlighted_Changes.png"});
 
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 
-	cout << "~~~~~~~~~~~~ " + imageResolution + " ~~~~~~~~~~~~" << endl;
+	cout << "~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
 	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);	
 

@@ -1,20 +1,21 @@
 #include "../../include/common/imageFunctions.hpp"
 
-string getImagePath(string imageName)
+string getOSPath(vector<string> paths)
 {
-	string imageDirectory;
-	filesystem::path currentPath = filesystem::current_path();
+	string dirSeperator;
 	
-	if (PLATFORM == 1) 					
-		imageDirectory = "images\\";	// Windows
-	else
-		imageDirectory = "images/";		// Linux and macOS
-	
-	filesystem::path imagePath =  currentPath / imageDirectory / imageName;
+	if(PLATFORM == 1) dirSeperator = "\\";
+	else dirSeperator = "/";
 
-	return imagePath.string();
+	string osPath = ".";
+
+	for(string &path : paths)
+	{
+		osPath += dirSeperator + path;
+	}
+
+	return osPath;
 }
-
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {

@@ -8,7 +8,7 @@ Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
 Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 int gpuChoice = -1;
 
-void printCUDADeviceProperties(void)
+void printDeviceProperties(void)
 {
 	// Code
 	cout << endl << "Detected Nvidia GPU ... Using CUDA ...";
@@ -90,8 +90,6 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	cudaMalloc(&d_oldImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_highlightedChangePixArr, size * sizeof(Pixel));
-
-	printCUDADeviceProperties();
 
 	cudaMemcpy(d_oldImagePixArr, h_oldImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_newImagePixArr, h_newImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);

@@ -3,12 +3,14 @@
 
 #include "../include/headers.hpp"
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	ImageData oldImage, newImage;
+	string imageResolution = argv[1];
+	string printDevProp = argv[2];
 
-	oldImage.address = getImagePath("old.png");
-	newImage.address = getImagePath("new.png");
+	oldImage.address = getOSPath({"images", imageResolution, imageResolution+"_old.png"});
+	newImage.address = getOSPath({"images", imageResolution, imageResolution+"_new.png"});
 
 	oldImage.dib = imageFormatIndependentLoader(oldImage.address.c_str(), 0);
 	newImage.dib = imageFormatIndependentLoader(newImage.address.c_str(), 0);
@@ -54,14 +56,20 @@ int main(void)
 	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
 	string CPU_ImageAddress, GPU_ImageAddress;
 	
-	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.png");
-	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.png");
+	CPU_ImageAddress = getOSPath({"images", imageResolution, imageResolution+"_CPU_Highlighted_Changes.png"});
+	GPU_ImageAddress = getOSPath({"images", imageResolution, imageResolution+"_GPU_Highlighted_Changes.png"});
 
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 
+	if (printDevProp == "1")
+	{
+		printDeviceProperties();
+	}
+	
+	cout << endl << "~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
-	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);	
+	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);
 	
 
 	CPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
@@ -92,6 +100,7 @@ int main(void)
 	
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
 	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
 	
 	free(GPU_DetectedChangesBitmap);
 	free(CPU_DetectedChangesBitmap);

@@ -16,6 +16,6 @@
 #include <math.h>
 
 // Function Protoypes
-void printCUDADeviceProperties(void);
+void printDeviceProperties(void);
 void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);

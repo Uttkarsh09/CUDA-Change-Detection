@@ -63,6 +63,23 @@ const char* oclSourceCode =
 		"write_imageui(output, gid, finalPixelColor);" \
 	"}";
 
+
+void printDeviceProperties(void)
+{
+	// Code
+	cout << endl << "Detected AMD/Intel/Nvidia GPU ... Using OpenCL ...";
+	cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
+	cout << endl << "OpenCL INFORMATION : " << endl;
+	cout << endl << "**************************************************************************************************" << endl;
+
+	getOpenCLPlatforms();
+
+	getOpenCLDevices();
+
+	cout << endl << "**************************************************************************************************" << endl;
+	cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
+}
+
 void getOpenCLPlatforms(void)
 {
 	// Code
@@ -140,22 +157,6 @@ void getOpenCLDevices(void)
 			oclDeviceId = oclDeviceIds[0];
 		}
 	}
-}
-
-void printOpenCLDeviceProperties(void)
-{
-	// Code
-	cout << endl << "Detected AMD/Intel/Nvidia GPU ... Using OpenCL ...";
-	cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
-	cout << endl << "OpenCL INFORMATION : " << endl;
-	cout << endl << "**************************************************************************************************" << endl;
-
-	getOpenCLPlatforms();
-
-	getOpenCLDevices();
-
-	cout << endl << "**************************************************************************************************" << endl;
-	cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
 }
 
 void createOpenCLContext(void)
@@ -401,7 +402,7 @@ void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
 
 	FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename("images/gpu_changes.png");
 	if (FreeImage_Save(format, image, "images/gpu_changes.png") == TRUE)
-		cout << endl << "Image Saved" << endl;
+		cout << endl << "GPU Image Saved" << endl;
 	else
 		cout << endl << "Failed to save image" << endl;
 	
@@ -411,8 +412,6 @@ void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
 void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
 	// Code
-	printOpenCLDeviceProperties();
-
 	createOpenCLContext();
 
 	createOpenCLCommandQueue();

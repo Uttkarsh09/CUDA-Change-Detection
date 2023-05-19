@@ -25,7 +25,7 @@ using namespace std;
 // Function Declarations
 void getOpenCLPlatforms(void);
 void getOpenCLDevices(void);
-void printOpenCLDeviceProperties(void);
+void printDeviceProperties(void);
 void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
 void createOpenCLProgram(const char*);

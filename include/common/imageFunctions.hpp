@@ -10,13 +10,15 @@
 #include <iostream>
 #include <filesystem>
 #include <string>
+#include <vector>
 using namespace std;
 
 #include "devicePlatform.hpp"
 #include "dataTypes.hpp"
 #include "FreeImage.h"
 
-string getImagePath(string);
+// Function Declarations
+string getOSPath(vector<string>);
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message);
 

@@ -8,7 +8,6 @@
     #pragma comment(lib, "cudart.lib")
 #endif
 
-#include "../../common/helper_timer.h"
 #include "../../common/dataTypes.hpp"
 #include "../../common/imageFunctions.hpp"
 

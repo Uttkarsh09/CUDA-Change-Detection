@@ -1,5 +1,6 @@
 #include "../../../include/GPU/CUDA/cudaChangeDetection.cuh"
 #include "../../../include/GPU/CUDA/changeDetectionKernel.cuh"
+#include "../../../include/common/helper_timer.h"
 
 #define THREADS_PER_BLOCK 1024
 

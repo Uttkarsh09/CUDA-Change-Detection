@@ -19,8 +19,8 @@ fi
 
 cd ..
 
-./detectChanges 1024
-./detectChanges 2048
-./detectChanges 4096
-./detectChanges 8192
-./detectChanges 10000
+./detectChanges 1024 1
+./detectChanges 2048 0
+./detectChanges 4096 0
+./detectChanges 8192 0
+./detectChanges 10000 0

@@ -1,5 +1,6 @@
 #include "../../../include/GPU/CUDA/changeDetectionKernel.cuh"
 
+
 __global__ void detectChanges(Pixel *oldImagePixelArr, Pixel *newImagePixelArr, Pixel *highlightedChangePixelArr, uint8_t threshold, int count)
 {
 	long pixelId = (blockDim.x * blockIdx.x) + threadIdx.x;

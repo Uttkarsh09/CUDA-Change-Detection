@@ -250,19 +250,8 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 void createOpenCLProgram(const char *kernelFileName)
 {
 	// Variable Declarations
-	ifstream kernelFile(kernelFileName, ios::in);
-	ostringstream outputStringStream;
-	string clSourceContents;
-	const char* clSourceCharArray = NULL;
 
 	// Code
-	// // ** Read from .cl file buffer into outputStringStream
-	// outputStringStream << kernelFile.rdbuf();
-
-	// clSourceContents = outputStringStream.str();
-	// clSourceCharArray = clSourceContents.c_str();
-
-	//oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&clSourceCharArray, NULL, &result);
 	oclProgram = clCreateProgramWithSource(oclContext, 1, (const char**)&oclSourceCode, NULL, &result);
 	if (result != CL_SUCCESS)
 	{
@@ -372,7 +361,6 @@ void scheduleOpenCLKernel(ImageData* oldImage, ImageData* newImage)
 void getOpenCLResults(ImageData* newImage, string imageAddress)
 {
 	// Read result back from device to host
-	// char* highlightedChangesPixels = new char[newImage->width * newImage->height * 4];
 	char* highlightedChangesPixels = (char*)malloc(newImage->width * newImage->height * 4);
 	const size_t origin[3] = { 0, 0, 0 };
 	const size_t region[3] = { newImage->width, newImage->height, 1 };
@@ -398,7 +386,6 @@ void getOpenCLResults(ImageData* newImage, string imageAddress)
 	);
 
 	free(highlightedChangesPixels);
-	// delete[] highlightedChangesPixels;
 	highlightedChangesPixels = NULL;
 
 	if (FreeImage_Save(newImage->imageFormat, image, imageAddress.c_str()) == TRUE)

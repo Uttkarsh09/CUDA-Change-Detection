@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 		printDeviceProperties();
 	}
 	
-	cout << endl << "~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~" << endl;
+	cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
 	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);
 	
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 	
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
 	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
-	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
 	
 	free(GPU_DetectedChangesBitmap);
 	free(CPU_DetectedChangesBitmap);

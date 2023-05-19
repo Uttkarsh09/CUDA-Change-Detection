@@ -17,9 +17,9 @@ if %hpp%==CUDA (
     cd ../
     main.exe 1024 1
     main.exe 2048 0
-    @REM main.exe 4096
-    @REM main.exe 8192
-    @REM main.exe 10000
+    main.exe 4096 0
+    main.exe 8192 0
+    main.exe 10000 0
 
     @REM cd "./bin/"
     @REM cl.exe /c /EHsc /std:c++20 /I "C:\OCL_SDK_Light\include" "../src/main.cpp" "../src/GPU/OpenCL/openclChangeDetection.cpp" "../src/common/imageFunctions.cpp" "../src/CPU/changeDetection.cpp" "../src/CPU/imageOperations.cpp"

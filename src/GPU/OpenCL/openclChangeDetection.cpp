@@ -22,7 +22,6 @@ cl_image_format oclImageFormat;
 
 int gpuChoice = -1;
 
-// Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
 cl_mem d_oldImage, d_newImage, d_highlightedChanges;
 
 float timeOnGPU = 0.0f;
@@ -76,6 +75,48 @@ void printDeviceProperties(void)
 
 	getOpenCLDevices();
 
+	for (int i = 0; i < (int)devCount; i++)
+	{
+		cout << "GPU Device Number				: " << i;
+		
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_NAME, sizeof(oclDevProp), &oclDevProp, NULL);
+		cout << endl << "GPU Device Name					: " << oclDevProp;
+		
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_VENDOR, sizeof(oclDevProp), &oclDevProp, NULL);
+		cout << endl << "GPU Device Vendor				: " << oclDevProp;
+
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_VERSION, sizeof(oclDevProp), &oclDevProp, NULL);
+		cout << endl << "GPU Device OpenCL Version			: " << oclDevProp;
+		
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(memorySize), &memorySize, NULL);
+		cout << endl << "GPU Device Memory				: " << (unsigned long long) memorySize / 1000000000 << " GB";
+		
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(computeUnits), &computeUnits, NULL);
+		cout << endl << "GPU Device Number Of Parallel Processor Cores	: " << computeUnits;
+		
+		clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_IMAGE_SUPPORT, sizeof(imageSupport), &imageSupport, NULL);
+		if (imageSupport == CL_TRUE)
+			cout << endl << "GPU Device Image Support			: Yes";
+		else
+			cout << endl << "GPU Device Image Support			: No";
+	}
+
+	// GPU Selection
+	if (devCount > 1)
+	{
+		cout << endl << "You have more than 1 OpenCL GPU Devices ... Please select 1 of them";
+		cout << endl << "Enter GPU Device Number : ";
+		cin >> gpuChoice;
+
+		// Set OpenCL GPU Device
+		oclDeviceId = oclDeviceIds[gpuChoice];
+	}
+	else
+	{
+		// Set OpenCL GPU Device
+		oclDeviceId = oclDeviceIds[0];
+	}
+
 	cout << endl << "***********************************************************************************" << endl;
 	cout << endl << "-----------------------------------------------------------------------------------" << endl;
 }
@@ -115,47 +156,7 @@ void getOpenCLDevices(void)
 		// Get Ids Into Allocated Buffer
 		clGetDeviceIDs(oclPlatformId, CL_DEVICE_TYPE_GPU, devCount, oclDeviceIds, NULL);
 
-		for (int i = 0; i < (int)devCount; i++)
-		{
-			cout << "GPU Device Number				: " << i;
-			
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_NAME, sizeof(oclDevProp), &oclDevProp, NULL);
-			cout << endl << "GPU Device Name					: " << oclDevProp;
-			
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_VENDOR, sizeof(oclDevProp), &oclDevProp, NULL);
-			cout << endl << "GPU Device Vendor				: " << oclDevProp;
-
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_VERSION, sizeof(oclDevProp), &oclDevProp, NULL);
-			cout << endl << "GPU Device OpenCL Version			: " << oclDevProp;
-			
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(memorySize), &memorySize, NULL);
-			cout << endl << "GPU Device Memory				: " << (unsigned long long) memorySize / 1000000000 << " GB";
-			
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(computeUnits), &computeUnits, NULL);
-			cout << endl << "GPU Device Number Of Parallel Processor Cores	: " << computeUnits;
-			
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_IMAGE_SUPPORT, sizeof(imageSupport), &imageSupport, NULL);
-			if (imageSupport == CL_TRUE)
-				cout << endl << "GPU Device Image Support			: Yes";
-			else
-				cout << endl << "GPU Device Image Support			: No";
-		}
-
-		// GPU Selection
-		if (devCount > 1)
-		{
-			cout << endl << "You have more than 1 OpenCL GPU Devices ... Please select 1 of them";
-			cout << endl << "Enter GPU Device Number : ";
-			cin >> gpuChoice;
-
-			// Set OpenCL GPU Device
-			oclDeviceId = oclDeviceIds[gpuChoice];
-		}
-		else
-		{
-			// Set OpenCL GPU Device
-			oclDeviceId = oclDeviceIds[0];
-		}
+		oclDeviceId = oclDeviceIds[0];
 	}
 }
 
@@ -331,7 +332,7 @@ void createOpenCLKernel(int threshold)
 		exit(EXIT_FAILURE);
 	}
 
-	result = clSetKernelArg(oclKernel, 3, sizeof(cl_int), (void*)&threshold);
+	result = clSetKernelArg(oclKernel, 3, sizeof(cl_int), &threshold);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clSetKernelArg() Failed For 4th Argument : " << getErrorString(result) << " ... Exiting !!!" << endl;
@@ -412,6 +413,10 @@ void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
 void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
 	// Code
+	getOpenCLPlatforms();
+
+	getOpenCLDevices();
+
 	createOpenCLContext();
 
 	createOpenCLCommandQueue();
@@ -557,22 +562,4 @@ void cleanup(void)
 	{
 		free(oclDeviceIds);
 	}
-
-	// if (h_highlightedChangePixArr)
-	// {
-	// 	free(h_highlightedChangePixArr);
-	// 	h_highlightedChangePixArr = NULL;
-	// }
-
-	// if (h_newImagePixArr)
-	// {
-	// 	free(h_newImagePixArr);
-	// 	h_newImagePixArr = NULL;
-	// }
-
-	// if (h_oldImagePixArr)
-	// {
-	// 	free(h_oldImagePixArr);
-	// 	h_oldImagePixArr = NULL;
-	// }
 }

@@ -12,8 +12,3 @@
 # ? Ignore WINDOWS executables
 *.exe
 *.obj
-
-# ? Ignore new generated images except new.png & old.png
-images/
-!images/new.png
-!images/old.png

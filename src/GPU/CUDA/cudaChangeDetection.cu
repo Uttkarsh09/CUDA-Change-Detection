@@ -84,8 +84,8 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 
-	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap);
-	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap);
+	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
+	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
 
 	cudaMalloc(&d_oldImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));

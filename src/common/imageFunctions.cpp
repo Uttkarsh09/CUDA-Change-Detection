@@ -1,20 +1,21 @@
 #include "../../include/common/imageFunctions.hpp"
 
-string getOSPath(vector<string> paths){
+string getOSPath(vector<string> paths)
+{
 	string dirSeperator;
 	
 	if(PLATFORM == 1) dirSeperator = "\\";
 	else dirSeperator = "/";
 
-	string OSPath = ".";
+	string osPath = ".";
 
-	for(string &path : paths){
-		OSPath += dirSeperator + path;
+	for(string &path : paths)
+	{
+		osPath += dirSeperator + path;
 	}
 
-	return OSPath;
+	return osPath;
 }
-
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
@@ -32,7 +33,7 @@ FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag)
 {
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
 
-	// ? The second argument is not used by FreeImgae!!
+	// ? The second argument is not used by FreeImage!!
 	fif = FreeImage_GetFileType(lpszPathName, 0);
 
 	// ? this means there is no signature, try to guess it from the file name (.png, ...)
@@ -46,8 +47,8 @@ FIBITMAP* imageFormatIndependentLoader(const char* lpszPathName, int flag)
 	}
 	
 	// ? fif == FIF_UNKNOWN, so we terminate
-	cout << "ERROR -> FILE IMAGE FORMAT UNKNOWN";
-	exit(1);
+	cerr << "ERROR -> FILE IMAGE FORMAT UNKNOWN";
+	exit(EXIT_FAILURE);
 }
 
 
@@ -102,8 +103,8 @@ void populateImageData(ImageData *imageData)
 	
 		if(imageData->imageFormat == FIF_UNKNOWN)
 		{
-			cout << "ERROR: Can't get FIF (Free Image Format)";
-			exit(1);
+			cerr << "ERROR: Can't get FIF (Free Image Format)";
+			exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -113,30 +114,30 @@ void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address)
 {
 	bool saved = FreeImage_Save(imageFormat, dib, address.c_str(), 0);
 
-	if(!saved)
+	if (!saved)
 	{
-		cout << endl << "~~~~~~~~~~" << endl;
-		perror("Can't save the file");
-		cout << endl << "~~~~~~~~~~" << endl;
-		exit(1);
+		cerr << endl << "~~~~~~~~~~" << endl;
+		cerr << endl << "Can't save the file" << endl;
+		cerr << endl << "~~~~~~~~~~" << endl;
+		exit(EXIT_FAILURE);
 	} 
 	
-	cout << "Image Saved Successfully at " << address << endl;
+	cout << endl << "Image Saved Successfully at " << address << endl;
 }
 
 
 void convertBitmapToPixelArr(Pixel *pixelArr, uint8_t *bitmap, size_t size)
 {
 	uint8_t *bitmapPtrCpy = bitmap;
-	
-	for(int i=0 ; i<size ; i++, bitmapPtrCpy+=3)
+
+	for (int i=0 ; i<size ; i++, bitmapPtrCpy+=3)
 	{
 		pixelArr[i].blue = bitmapPtrCpy[0];
 		pixelArr[i].green = bitmapPtrCpy[1];
 		pixelArr[i].red = bitmapPtrCpy[2];
 	}
-}
 
+}
 
 void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size)
 {
@@ -148,4 +149,5 @@ void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size)
 		bitmapPtrCpy[1] = pixelArr[i].green;
 		bitmapPtrCpy[2] = pixelArr[i].red;
 	}
+	
 }

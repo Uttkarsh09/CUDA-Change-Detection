@@ -43,7 +43,6 @@ class StopWatchInterface
 //////////////////////////////////////////////////////////////////
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // includes, system
-#define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 
 // FOLLOWING 2 LINES ARE COMMENTED BY VDG TO AVOID UNDEFINED ERRORS IN MyWindow.cpp IN WM_PAINT FOR max() AND min() MACROS USED IN SCROLLING LOGIC

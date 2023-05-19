@@ -7,3 +7,9 @@
 #elif defined(__APPLE__)
     #define PLATFORM 3
 #endif
+
+#if defined(__NVCC__)
+    #define HPP 1
+#else
+    #define HPP 2
+#endif

@@ -1,5 +1,12 @@
 #pragma once
 
+#include "systemMacros.hpp"
+
+#if (PLATFORM == 1)
+    #include <windows.h>
+    #pragma comment(lib, "FreeImage.lib")
+#endif
+
 #include <iostream>
 #include <filesystem>
 #include <string>
@@ -8,8 +15,10 @@ using namespace std;
 
 #include "devicePlatform.hpp"
 #include "dataTypes.hpp"
-#include "systemMacros.hpp"
 #include "FreeImage.h"
+
+// Function Declarations
+string getOSPath(vector<string>);
 
 #if (PLATFORM == 1)
     #pragma comment(lib, "FreeImage.lib")

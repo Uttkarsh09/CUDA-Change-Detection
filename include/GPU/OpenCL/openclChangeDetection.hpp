@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../../common/systemMacros.hpp"
-#include "../../common/dataTypes.hpp"
 
 #if (PLATFORM == 1)
+    #include <windows.h>
     #include <CL/opencl.h>
     #pragma comment(lib, "OpenCL.lib")
 #elif (PLATFORM == 2)
@@ -12,15 +12,29 @@
     #include <OpenCL/opencl.h>
 #endif
 
+#include "../../common/dataTypes.hpp"
+#include "../../common/imageFunctions.hpp"
+
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstdlib>
 using namespace std;
+
 
 // Function Declarations
 void getOpenCLPlatforms(void);
 void getOpenCLDevices(void);
-void printOpenCLDeviceProperties(void);
+void printDeviceProperties(void);
 void createOpenCLContext(void);
 void createOpenCLCommandQueue(void);
-void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges);
+void createOpenCLProgram(const char*);
+void createOpenCLImageStructure(ImageData*, ImageData*);
+void createOpenCLKernel(int);
+void scheduleOpenCLKernel(ImageData*, ImageData*);
+void getOpenCLResults(ImageData*, string);
+void runOnGPU(ImageData*, ImageData*, int, uint8_t*, string);
 void cleanup(void);
+
+// Utility Functions
+string getErrorString(cl_int);

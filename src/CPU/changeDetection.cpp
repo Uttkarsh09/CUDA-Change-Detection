@@ -1,8 +1,11 @@
 #include "../../include/CPU/changeDetection.hpp"
 
+Pixel *oldImagePixArr = NULL;
+Pixel *newImagePixArr = NULL;
+Pixel *highlightedChangePixArr = NULL;
+
 void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
 {
-	Pixel *oldImagePixArr, *newImagePixArr, *highlightedChangePixArr;
 	uint8_t *highlightChangesBitmap, *startCpy;
 	FIBITMAP *highlightChangesDib;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
@@ -26,11 +29,30 @@ void runOnCPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	timeOnCPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
 	
-	cout << "Time Taken on CPU: " << timeOnCPU << "ms" << endl;
+	cout << "Time Taken on CPU : " << timeOnCPU << " ms" << endl;
 
 	convertPixelArrToBitmap(detectedChanges, highlightedChangePixArr, size);
 
-	free(oldImagePixArr);
-	free(newImagePixArr);
-	free(highlightedChangePixArr);
+	cpu_cleanup();
+}
+
+void cpu_cleanup(void)
+{
+	if (highlightedChangePixArr)
+	{
+		free(highlightedChangePixArr);
+		highlightedChangePixArr = NULL;
+	}
+
+	if (newImagePixArr)
+	{
+		free(newImagePixArr);
+		newImagePixArr = NULL;
+	}
+
+	if (oldImagePixArr)
+	{
+		free(oldImagePixArr);
+		oldImagePixArr = NULL;
+	}
 }

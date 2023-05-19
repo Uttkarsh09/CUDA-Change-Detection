@@ -1,19 +1,20 @@
 #include "../../../include/GPU/CUDA/cudaChangeDetection.cuh"
 #include "../../../include/GPU/CUDA/changeDetectionKernel.cuh"
-#include "../../../include/common/helper_timer.h"
 
 #define THREADS_PER_BLOCK 1024
 
 // Variable Declarations
+Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
+Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 int gpuChoice = -1;
 
-void printCUDADeviceProperties(void)
+void printDeviceProperties(void)
 {
 	// Code
 	cout << endl << "Detected Nvidia GPU ... Using CUDA ...";
-	cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
+	cout << endl << "-----------------------------------------------------------------------------------" << endl;
 	cout << endl << "CUDA INFORMATION : " << endl;
-	cout << endl << "**************************************************************************************************";
+	cout << endl << "***********************************************************************************";
 	
 	cudaError_t retCudaRt;
 	int devCount;
@@ -34,7 +35,7 @@ void printCUDADeviceProperties(void)
 		for (int i = 0; i < devCount; i++)
 		{
 			cudaDeviceProp devProp;
-			int driverVersion = 0, runtimeVersion = 0;
+			int runtimeVersion = 0;
 
 			retCudaRt = cudaGetDeviceProperties(&devProp, i);
 			if (retCudaRt != cudaSuccess)
@@ -43,11 +44,11 @@ void printCUDADeviceProperties(void)
 				return;
 			}
 
-			cudaDriverGetVersion(&driverVersion);
 			cudaRuntimeGetVersion(&runtimeVersion);
 
 			cout << endl << "GPU Device Number			: " << i;
 			cout << endl << "GPU Device Name				: " << devProp.name;
+			cout << endl << "CUDA Version				: " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10;
 			cout << endl << "GPU Device Memory			: " << (ceil((float)devProp.totalGlobalMem / 1048576.0f) / 1024.0f) << " GB";
 			cout << endl << "GPU Device Number Of SMProcessors	: " << devProp.multiProcessorCount;
 		}
@@ -68,16 +69,14 @@ void printCUDADeviceProperties(void)
 			cudaSetDevice(0);
 		}
 
-		cout << endl << "**************************************************************************************************";
-		cout << endl << "--------------------------------------------------------------------------------------------------" << endl;
+		cout << endl << "***********************************************************************************";
+		cout << endl << "-----------------------------------------------------------------------------------" << endl;
 	}
 }
 
 
-void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges, string imageAddress)
 {
-	Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
-	Pixel *d_oldImagePixArr, *d_newImagePixArr, *d_highlightedChangePixArr;
 	size_t size = (oldImage->height * oldImage->pitch)/3;
 	float timeOnGPU = 0.0f;
 
@@ -91,8 +90,6 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	cudaMalloc(&d_oldImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_highlightedChangePixArr, size * sizeof(Pixel));
-
-	// printCUDADeviceProperties();
 
 	cudaMemcpy(d_oldImagePixArr, h_oldImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_newImagePixArr, h_newImagePixArr, size * sizeof(Pixel), cudaMemcpyHostToDevice);
@@ -108,23 +105,51 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	sdkStopTimer(&timer);
 	timeOnGPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
-
-	cout << "Time Taken on GPU: " << timeOnGPU << "ms" << endl;
-
+ 
 	cudaMemcpy(h_highlightedChangePixArr, d_highlightedChangePixArr, size * sizeof(Pixel), cudaMemcpyDeviceToHost);
+
+	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
 	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
 
-	free(h_oldImagePixArr);
-	free(h_newImagePixArr);
-	free(h_highlightedChangePixArr);
-	cudaFree(d_oldImagePixArr);
-	cudaFree(d_newImagePixArr);
-	cudaFree(d_highlightedChangePixArr);
+	cleanup();
 }
-
 
 void cleanup(void)
 {
-	cout << endl << "Placeholder Cleanup Message" << endl;
+	if (d_highlightedChangePixArr)
+	{
+		cudaFree(d_highlightedChangePixArr);
+		d_highlightedChangePixArr = NULL;
+	}
+
+	if (d_newImagePixArr)
+	{
+		cudaFree(d_newImagePixArr);
+		d_newImagePixArr = NULL;
+	}
+
+	if (d_oldImagePixArr)
+	{
+		cudaFree(d_oldImagePixArr);
+		d_oldImagePixArr = NULL;
+	}
+
+	if (h_highlightedChangePixArr)
+	{
+		free(h_highlightedChangePixArr);
+		h_highlightedChangePixArr = NULL;
+	}
+
+	if (h_newImagePixArr)
+	{
+		free(h_newImagePixArr);
+		h_newImagePixArr = NULL;
+	}
+
+	if (h_oldImagePixArr)
+	{
+		free(h_oldImagePixArr);
+		h_oldImagePixArr = NULL;
+	}
 }

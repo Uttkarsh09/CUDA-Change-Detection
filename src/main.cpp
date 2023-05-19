@@ -1,12 +1,10 @@
-// * dib -> Device Independent Bitmap - bitmap datatyp of FreeImage
-// * bitmap -> normal uint8_t bitmap (array of uint8_t)
-
 #include "../include/headers.hpp"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	ImageData oldImage, newImage;
 	string imageResolution = argv[1];
+	string printDevProp = argv[2];
 
 	oldImage.address = getOSPath({"images", imageResolution, imageResolution+"_old.png"});
 	newImage.address = getOSPath({"images", imageResolution, imageResolution+"_new.png"});
@@ -17,13 +15,10 @@ int main(int argc, char *argv[])
 	populateImageData(&oldImage);
 	populateImageData(&newImage);
 
-	// printImageData(&oldImage);
-	// printImageData(&newImage);
-
 	if((oldImage.height != newImage.height) || (oldImage.width != newImage.width))
 	{
-		cout << "Error: Image Dimentions not same";
-		exit(1);
+		cerr << "Error: Image Dimentions not same";
+		exit(EXIT_FAILURE);
 	}
 	
 	oldImage.bitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
@@ -61,9 +56,15 @@ int main(int argc, char *argv[])
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 
-	cout << "~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~" << endl;
+	if (printDevProp == "1")
+	{
+		printDeviceProperties();
+	}
+	
+	cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
-	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);	
+	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap, GPU_ImageAddress);
+	
 
 	CPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
 		CPU_DetectedChangesBitmap, 
@@ -88,12 +89,15 @@ int main(int argc, char *argv[])
 		FI_RGBA_BLUE_MASK, 
 		TRUE
 	);
-
-	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
-	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
-	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
 	
-	free(CPU_DetectedChangesBitmap);
+	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
+	#if (HPP == 1)
+		saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	#endif
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+	
 	free(GPU_DetectedChangesBitmap);
+	free(CPU_DetectedChangesBitmap);
+	
 	return 0;
 }

@@ -21,8 +21,8 @@ int main(void)
 
 	if((oldImage.height != newImage.height) || (oldImage.width != newImage.width))
 	{
-		cout << "Error: Image Dimentions not same";
-		exit(1);
+		cerr << "Error: Image Dimentions not same";
+		exit(EXIT_FAILURE);
 	}
 	
 	oldImage.bitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
@@ -54,8 +54,8 @@ int main(void)
 	FIBITMAP *GPU_DetectedChangesDib, *CPU_DetectedChangesDib;
 	string CPU_ImageAddress, GPU_ImageAddress;
 	
-	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.tif");
-	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.tif");
+	CPU_ImageAddress = getImagePath("CPU_Highlighted_Changes.png");
+	GPU_ImageAddress = getImagePath("GPU_Highlighted_Changes.png");
 
 	CPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
 	GPU_DetectedChangesBitmap = (uint8_t*)malloc(oldImage.height * oldImage.pitch);
@@ -89,7 +89,7 @@ int main(void)
 	);
 
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
-	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	//saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
 	
 	free(GPU_DetectedChangesBitmap);
 	free(CPU_DetectedChangesBitmap);

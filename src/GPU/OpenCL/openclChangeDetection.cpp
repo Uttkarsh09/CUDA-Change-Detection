@@ -31,7 +31,7 @@ const char* oclSourceCode =
 	
 	"__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;" \
 	
-	"__kernel void rgbToGrayScale(__read_only image2d_t inputOld, __read_only image2d_t inputNew, __write_only image2d_t output, int threshold)" \
+	"__kernel void oclChangeDetection(__read_only image2d_t inputOld, __read_only image2d_t inputNew, __write_only image2d_t output, int threshold)" \
 	"{" \
 		"int2 gid = (int2)(get_global_id(0), get_global_id(1));" \
 		
@@ -200,22 +200,51 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 	oclImageFormat.image_channel_data_type = CL_UNSIGNED_INT8;
 
 	// Create Old Input Image
-	d_oldImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, oldImage->width, oldImage->height, 0, h_oldImagePixArr, &result);
+	FIBITMAP *temp = oldImage->dib;
+	oldImage->dib = FreeImage_ConvertTo32Bits(oldImage->dib);
+	FreeImage_Unload(temp);
+
+	oldImage->width = FreeImage_GetHeight(oldImage->dib);
+	oldImage->height = FreeImage_GetHeight(oldImage->dib);
+
+	// **Multiply by 4 to convert 8-bit to 32-bit image
+	char* oldImagePixels = new char[4 * oldImage->width * oldImage->height];
+
+	// ** Copy the data from FreeImage bits to our pixel array
+	memcpy(oldImagePixels, FreeImage_GetBits(oldImage->dib), 4 * oldImage->width * oldImage->height);
+
+	d_oldImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, oldImage->width, oldImage->height, 0, oldImagePixels, &result);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clCreateImage2D() Failed For Old Input Image : " << getErrorString(result) << " ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
+	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Create New Input Image
-	d_newImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, newImage->width, newImage->height, 0, h_newImagePixArr, &result);
+	temp = newImage->dib;
+	newImage->dib = FreeImage_ConvertTo32Bits(newImage->dib);
+	FreeImage_Unload(temp);
+
+	newImage->width = FreeImage_GetHeight(newImage->dib);
+	newImage->height = FreeImage_GetHeight(newImage->dib);
+
+	// **Multiply by 4 to convert 8-bit to 32-bit image
+	char* newImagePixels = new char[4 * newImage->width * newImage->height];
+
+	// ** Copy the data from FreeImage bits to our pixel array
+	memcpy(newImagePixels, FreeImage_GetBits(newImage->dib), 4 * newImage->width * newImage->height);
+
+	d_newImage = clCreateImage2D(oclContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &oclImageFormat, newImage->width, newImage->height, 0, newImagePixels, &result);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clCreateImage2D() Failed For New Input Image : " << getErrorString(result) << " ... Exiting !!!" << endl;
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
+
+	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Create Ouput Image (Highlighted Changes)
 	d_highlightedChanges = clCreateImage2D(oclContext, CL_MEM_WRITE_ONLY, &oclImageFormat, newImage->width, newImage->height, 0, NULL, &result);
@@ -342,35 +371,33 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	printOpenCLDeviceProperties();
 
-	size_t size = (oldImage->height * oldImage->pitch)/3;
+	// size_t size = (oldImage->height * oldImage->pitch)/3;
 	float timeOnGPU = 0.0f;
 
-	h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (h_oldImagePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for h_oldImagePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (h_oldImagePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for h_oldImagePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 	
-	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (h_newImagePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for h_newImagePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (h_newImagePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for h_newImagePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 	
-	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	if (h_highlightedChangePixArr == NULL)
-	{
-		cout << endl << "Failed to allocate memory for h_highlightedChangePixArr ... Exiting !!!" << endl;
-		cleanup();
-		exit(EXIT_FAILURE);
-	}
+	// h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
+	// if (h_highlightedChangePixArr == NULL)
+	// {
+	// 	cout << endl << "Failed to allocate memory for h_highlightedChangePixArr ... Exiting !!!" << endl;
+	// 	cleanup();
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
-	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
 
 	createOpenCLContext();
 
@@ -382,20 +409,15 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	createOpenCLKernel(threshold);
 
-	// ! ** IMPORTANT ***
-	// ! CL_KERNEL_WORK_GROUP_SIZE <= CL_DEVICE_MAX_WORK_GROUP_SIZE
-
 	// Kernel Configuration
-	size_t localSize[2] = {32, 32};
-	//size_t globalSize[2] = {imageWidth, imageHeight};
-	size_t globalSize[2] = {(unsigned int)oldImage->width, (unsigned int)oldImage->height};
+	size_t globalSize[2] = {oldImage->width, oldImage->height};
 
 	// Start Timer
 	StopWatchInterface* timer = NULL;
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
 
-	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, globalSize, localSize, 0, NULL, NULL);
+	result = clEnqueueNDRangeKernel(oclCommandQueue, oclKernel, 2, NULL, globalSize, 0, 0, NULL, NULL);
 	if (result != CL_SUCCESS)
 	{
 		cout << endl << "clEnqueueNDRangeKernel() Failed : " << getErrorString(result) << " ... Exiting !!!" << endl;
@@ -410,11 +432,14 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	timeOnGPU = sdkGetTimerValue(&timer);
 	sdkDeleteTimer(&timer);
 
-	// Read result back from device to host
-	const size_t origin[3] = { 0, 0, 0 };
-	const size_t region[3] = { (size_t)newImage->width, (size_t)newImage->height, 1 };
+	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
-	result = clEnqueueReadImage(oclCommandQueue, d_highlightedChanges, CL_TRUE, origin, region, 0, 0, h_highlightedChangePixArr, 0, NULL, NULL);
+	// Read result back from device to host
+	char* highlightedChangesPixels = new char[newImage->width * newImage->height * 4];
+	const size_t origin[3] = { 0, 0, 0 };
+	const size_t region[3] = { newImage->width, newImage->height, 1 };
+
+	result = clEnqueueReadImage(oclCommandQueue, d_highlightedChanges, CL_TRUE, origin, region, 0, 0, highlightedChangesPixels, 0, NULL, NULL);
 	if (result != CL_SUCCESS)
 	{
 		cerr << endl << "clEnqueueReadImage() Failed " << getErrorString(result) << "... Exiting !!!" << endl;
@@ -422,9 +447,19 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 		exit(EXIT_FAILURE);
 	}
 
-	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+	// ** Convert the output buffer into the FreeImage Format
+	FIBITMAP* image = FreeImage_ConvertFromRawBits((BYTE*)highlightedChangesPixels, newImage->width, newImage->height, newImage->width * 4, 32, 0, 0, 0, false);
 
-	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
+	delete[] highlightedChangesPixels;
+	highlightedChangesPixels = NULL;
+
+	FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename("images/gpu_changes.png");
+	if (FreeImage_Save(format, image, "images/gpu_changes.png") == TRUE)
+		cout << endl << "Image Saved" << endl;
+	else
+		cout << endl << "Failed to save image" << endl;
+
+	// convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size, true);
 
 	cleanup();
 }

@@ -6,8 +6,8 @@ using namespace std;
 
 typedef struct Image_Metadata 
 {
-	int width = -1;
-	int height = -1;
+	unsigned int width = -1;
+	unsigned int height = -1;
 	int bpp = -1; // ? Bits Per Pixel
 	int pitch;
 	int bitmapWidth;

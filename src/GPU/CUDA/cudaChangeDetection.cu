@@ -84,8 +84,8 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 	h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
 
-	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap, size);
-	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap, size);
+	convertBitmapToPixelArr(h_oldImagePixArr, oldImage->bitmap);
+	convertBitmapToPixelArr(h_newImagePixArr, newImage->bitmap);
 
 	cudaMalloc(&d_oldImagePixArr, size * sizeof(Pixel));
 	cudaMalloc(&d_newImagePixArr, size * sizeof(Pixel));
@@ -112,7 +112,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
-	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
+	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size, false);
 
 	cleanup();
 }

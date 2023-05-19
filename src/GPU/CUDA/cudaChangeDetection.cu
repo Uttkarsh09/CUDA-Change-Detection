@@ -35,7 +35,7 @@ void printCUDADeviceProperties(void)
 		for (int i = 0; i < devCount; i++)
 		{
 			cudaDeviceProp devProp;
-			int driverVersion = 0, runtimeVersion = 0;
+			int runtimeVersion = 0;
 
 			retCudaRt = cudaGetDeviceProperties(&devProp, i);
 			if (retCudaRt != cudaSuccess)
@@ -44,11 +44,11 @@ void printCUDADeviceProperties(void)
 				return;
 			}
 
-			cudaDriverGetVersion(&driverVersion);
 			cudaRuntimeGetVersion(&runtimeVersion);
 
 			cout << endl << "GPU Device Number			: " << i;
 			cout << endl << "GPU Device Name				: " << devProp.name;
+			cout << endl << "CUDA Version				: " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10;
 			cout << endl << "GPU Device Memory			: " << (ceil((float)devProp.totalGlobalMem / 1048576.0f) / 1024.0f) << " GB";
 			cout << endl << "GPU Device Number Of SMProcessors	: " << devProp.multiProcessorCount;
 		}
@@ -112,7 +112,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 
-	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size, false);
+	convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size);
 
 	cleanup();
 }

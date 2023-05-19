@@ -21,6 +21,7 @@
 #include <cstdlib>
 using namespace std;
 
+
 // Function Declarations
 void getOpenCLPlatforms(void);
 void getOpenCLDevices(void);
@@ -30,9 +31,10 @@ void createOpenCLCommandQueue(void);
 void createOpenCLProgram(const char*);
 void createOpenCLImageStructure(ImageData*, ImageData*);
 void createOpenCLKernel(int);
+void scheduleOpenCLKernel(ImageData*, ImageData*);
+void getOpenCLResults(ImageData*, uint8_t*);
 void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
 void cleanup(void);
 
 // Utility Functions
-size_t roundUp(int, unsigned int);
 string getErrorString(cl_int);

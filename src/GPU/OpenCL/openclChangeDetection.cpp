@@ -4,7 +4,7 @@
 // Variable Declarations
 cl_platform_id oclPlatformId;
 cl_device_id oclDeviceId;
-cl_uint devCount, computeUnits, maxSamplers, maxReadImgArgs, maxWriteImgArgs;
+cl_uint devCount, computeUnits;
 cl_ulong memorySize;
 cl_bool imageSupport;
 cl_device_id* oclDeviceIds;
@@ -22,10 +22,10 @@ cl_image_format oclImageFormat;
 
 int gpuChoice = -1;
 
-Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
+// Pixel *h_oldImagePixArr, *h_newImagePixArr, *h_highlightedChangePixArr;
 cl_mem d_oldImage, d_newImage, d_highlightedChanges;
 
-ofstream logFile;
+float timeOnGPU = 0.0f;
 
 const char* oclSourceCode =
 	
@@ -122,15 +122,6 @@ void getOpenCLDevices(void)
 				cout << endl << "GPU Device Image Support			: Yes";
 			else
 				cout << endl << "GPU Device Image Support			: No";
-
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_MAX_SAMPLERS, sizeof(maxSamplers), &maxSamplers, NULL);
-			cout << endl << "GPU Device Max Samplers				: " << maxSamplers;
-
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_MAX_READ_IMAGE_ARGS, sizeof(maxReadImgArgs), &maxReadImgArgs, NULL);
-			cout << endl << "GPU Device Max Read Image Arguments		: " << maxReadImgArgs;
-
-			clGetDeviceInfo(oclDeviceIds[i], CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(maxWriteImgArgs), &maxWriteImgArgs, NULL);
-			cout << endl << "GPU Device Max Write Image Arguments		: " << maxWriteImgArgs;
 		}
 
 		// GPU Selection
@@ -204,9 +195,6 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 	oldImage->dib = FreeImage_ConvertTo32Bits(oldImage->dib);
 	FreeImage_Unload(temp);
 
-	oldImage->width = FreeImage_GetHeight(oldImage->dib);
-	oldImage->height = FreeImage_GetHeight(oldImage->dib);
-
 	// **Multiply by 4 to convert 8-bit to 32-bit image
 	char* oldImagePixels = new char[4 * oldImage->width * oldImage->height];
 
@@ -220,15 +208,14 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 		cleanup();
 		exit(EXIT_FAILURE);
 	}
+
+	FreeImage_Unload(oldImage->dib);
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Create New Input Image
 	temp = newImage->dib;
 	newImage->dib = FreeImage_ConvertTo32Bits(newImage->dib);
 	FreeImage_Unload(temp);
-
-	newImage->width = FreeImage_GetHeight(newImage->dib);
-	newImage->height = FreeImage_GetHeight(newImage->dib);
 
 	// **Multiply by 4 to convert 8-bit to 32-bit image
 	char* newImagePixels = new char[4 * newImage->width * newImage->height];
@@ -244,6 +231,7 @@ void createOpenCLImageStructure(ImageData* oldImage, ImageData* newImage)
 		exit(EXIT_FAILURE);
 	}
 
+	FreeImage_Unload(newImage->dib);
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Create Ouput Image (Highlighted Changes)
@@ -299,8 +287,6 @@ void createOpenCLProgram(const char *kernelFileName)
 		}
 
 		clGetProgramBuildInfo(oclProgram, oclDeviceId, CL_PROGRAM_BUILD_LOG, logSize, log, NULL);
-
-		logFile << endl << "Program Build Log : " << log << endl;
 		
 		cerr << endl << "clBuildProgram() Failed : " << result << endl;
 
@@ -353,62 +339,8 @@ void createOpenCLKernel(int threshold)
 	}
 }
 
-size_t roundUp(int localSize, unsigned int globalSize)
+void scheduleOpenCLKernel(ImageData* oldImage, ImageData* newImage)
 {
-	// Code
-	unsigned int remainder = globalSize % localSize;
-
-	if (remainder == 0)
-		return globalSize;
-	else
-		return globalSize + localSize - remainder;
-}
-
-void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
-{
-	// Code
-	logFile.open("Log.txt");
-
-	printOpenCLDeviceProperties();
-
-	// size_t size = (oldImage->height * oldImage->pitch)/3;
-	float timeOnGPU = 0.0f;
-
-	// h_oldImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	// if (h_oldImagePixArr == NULL)
-	// {
-	// 	cout << endl << "Failed to allocate memory for h_oldImagePixArr ... Exiting !!!" << endl;
-	// 	cleanup();
-	// 	exit(EXIT_FAILURE);
-	// }
-	
-	// h_newImagePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	// if (h_newImagePixArr == NULL)
-	// {
-	// 	cout << endl << "Failed to allocate memory for h_newImagePixArr ... Exiting !!!" << endl;
-	// 	cleanup();
-	// 	exit(EXIT_FAILURE);
-	// }
-	
-	// h_highlightedChangePixArr = (Pixel*)malloc(size * sizeof(Pixel));
-	// if (h_highlightedChangePixArr == NULL)
-	// {
-	// 	cout << endl << "Failed to allocate memory for h_highlightedChangePixArr ... Exiting !!!" << endl;
-	// 	cleanup();
-	// 	exit(EXIT_FAILURE);
-	// }
-
-
-	createOpenCLContext();
-
-	createOpenCLCommandQueue();
-
-	createOpenCLImageStructure(oldImage, newImage);
-
-	createOpenCLProgram("oclChangeDetection.cl");
-
-	createOpenCLKernel(threshold);
-
 	// Kernel Configuration
 	size_t globalSize[2] = {oldImage->width, oldImage->height};
 
@@ -433,7 +365,10 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	sdkDeleteTimer(&timer);
 
 	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
+}
 
+void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
+{
 	// Read result back from device to host
 	char* highlightedChangesPixels = new char[newImage->width * newImage->height * 4];
 	const size_t origin[3] = { 0, 0, 0 };
@@ -448,7 +383,18 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 	}
 
 	// ** Convert the output buffer into the FreeImage Format
-	FIBITMAP* image = FreeImage_ConvertFromRawBits((BYTE*)highlightedChangesPixels, newImage->width, newImage->height, newImage->width * 4, 32, 0, 0, 0, false);
+	FIBITMAP* image = FreeImage_ConvertFromRawBits(
+		(BYTE*)highlightedChangesPixels, 
+		newImage->width, 
+		newImage->height, 
+		newImage->width * 4, 
+		32,
+		0, 
+		0, 
+		0, 
+		false);
+
+	detectedChanges = (uint8_t *)highlightedChangesPixels;
 
 	delete[] highlightedChangesPixels;
 	highlightedChangesPixels = NULL;
@@ -458,8 +404,28 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 		cout << endl << "Image Saved" << endl;
 	else
 		cout << endl << "Failed to save image" << endl;
-
+	
 	// convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size, true);
+}
+
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
+{
+	// Code
+	printOpenCLDeviceProperties();
+
+	createOpenCLContext();
+
+	createOpenCLCommandQueue();
+
+	createOpenCLImageStructure(oldImage, newImage);
+
+	createOpenCLProgram("oclChangeDetection.cl");
+
+	createOpenCLKernel(threshold);
+
+	scheduleOpenCLKernel(oldImage, newImage);
+
+	getOpenCLResults(newImage, detectedChanges);
 
 	cleanup();
 }
@@ -593,26 +559,21 @@ void cleanup(void)
 		free(oclDeviceIds);
 	}
 
-	if (h_highlightedChangePixArr)
-	{
-		free(h_highlightedChangePixArr);
-		h_highlightedChangePixArr = NULL;
-	}
+	// if (h_highlightedChangePixArr)
+	// {
+	// 	free(h_highlightedChangePixArr);
+	// 	h_highlightedChangePixArr = NULL;
+	// }
 
-	if (h_newImagePixArr)
-	{
-		free(h_newImagePixArr);
-		h_newImagePixArr = NULL;
-	}
+	// if (h_newImagePixArr)
+	// {
+	// 	free(h_newImagePixArr);
+	// 	h_newImagePixArr = NULL;
+	// }
 
-	if (h_oldImagePixArr)
-	{
-		free(h_oldImagePixArr);
-		h_oldImagePixArr = NULL;
-	}
-
-	if (logFile)
-	{
-		logFile.close();
-	}
+	// if (h_oldImagePixArr)
+	// {
+	// 	free(h_oldImagePixArr);
+	// 	h_oldImagePixArr = NULL;
+	// }
 }

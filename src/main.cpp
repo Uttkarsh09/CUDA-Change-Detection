@@ -76,20 +76,22 @@ int main(void)
 		TRUE
 	);
 
-	GPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
-		GPU_DetectedChangesBitmap, 
-		oldImage.width, 
-		oldImage.height, 
-		oldImage.pitch, 
-		oldImage.bpp, 
-		FI_RGBA_RED_MASK, 
-		FI_RGBA_GREEN_MASK, 
-		FI_RGBA_BLUE_MASK, 
-		TRUE
-	);
 
+	GPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
+			GPU_DetectedChangesBitmap, 
+			oldImage.width, 
+			oldImage.height, 
+			oldImage.pitch, 
+			oldImage.bpp, 
+			FI_RGBA_RED_MASK, 
+			FI_RGBA_GREEN_MASK, 
+			FI_RGBA_BLUE_MASK, 
+			TRUE
+		);
+
+	
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
-	//saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
 	
 	free(GPU_DetectedChangesBitmap);
 	free(CPU_DetectedChangesBitmap);

@@ -17,5 +17,5 @@
 
 // Function Protoypes
 void printDeviceProperties(void);
-void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
+void runOnGPU(ImageData*, ImageData*, int, uint8_t*, string);
 void cleanup(void);

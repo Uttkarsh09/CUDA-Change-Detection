@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 	
 	cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " + imageResolution + "x" + imageResolution + " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 	runOnCPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, CPU_DetectedChangesBitmap);
-	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap);
+	runOnGPU(&oldImage, &newImage, DIFFERENCE_THRESHOLD, GPU_DetectedChangesBitmap, GPU_ImageAddress);
 	
 
 	CPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
@@ -78,22 +78,22 @@ int main(int argc, char* argv[])
 		TRUE
 	);
 
-
 	GPU_DetectedChangesDib = FreeImage_ConvertFromRawBits(
-			GPU_DetectedChangesBitmap, 
-			oldImage.width, 
-			oldImage.height, 
-			oldImage.pitch, 
-			oldImage.bpp, 
-			FI_RGBA_RED_MASK, 
-			FI_RGBA_GREEN_MASK, 
-			FI_RGBA_BLUE_MASK, 
-			TRUE
-		);
-
+		GPU_DetectedChangesBitmap, 
+		oldImage.width, 
+		oldImage.height, 
+		oldImage.pitch, 
+		oldImage.bpp, 
+		FI_RGBA_RED_MASK, 
+		FI_RGBA_GREEN_MASK, 
+		FI_RGBA_BLUE_MASK, 
+		TRUE
+	);
 	
 	saveImage(CPU_DetectedChangesDib, oldImage.imageFormat, CPU_ImageAddress);
-	saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	#if (HPP == 1)
+		saveImage(GPU_DetectedChangesDib, oldImage.imageFormat, GPU_ImageAddress);
+	#endif
 	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
 	
 	free(GPU_DetectedChangesBitmap);

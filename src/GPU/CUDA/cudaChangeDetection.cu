@@ -75,7 +75,7 @@ void printDeviceProperties(void)
 }
 
 
-void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges, string imageAddress)
 {
 	size_t size = (oldImage->height * oldImage->pitch)/3;
 	float timeOnGPU = 0.0f;

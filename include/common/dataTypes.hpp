@@ -6,10 +6,9 @@
 
 using namespace std;
 
-#if defined(__NVCC__)
+#if (HPP == 1)
 
-    // CUDA
-    typedef struct Image_Metadata 
+	typedef struct Image_Metadata 
 	{
 		int width = -1;
 		int height = -1;
@@ -24,10 +23,9 @@ using namespace std;
 
 	} ImageData;
 
-#else
+#elif (HPP == 2)
 
-	// OpenCL
-    typedef struct Image_Metadata 
+	typedef struct Image_Metadata 
 	{
 		unsigned int width = -1;
 		unsigned int height = -1;

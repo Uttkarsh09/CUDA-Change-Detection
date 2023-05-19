@@ -369,10 +369,11 @@ void scheduleOpenCLKernel(ImageData* oldImage, ImageData* newImage)
 	cout << endl << "Time Taken on GPU : " << timeOnGPU << " ms" << endl;
 }
 
-void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
+void getOpenCLResults(ImageData* newImage, string imageAddress)
 {
 	// Read result back from device to host
-	char* highlightedChangesPixels = new char[newImage->width * newImage->height * 4];
+	// char* highlightedChangesPixels = new char[newImage->width * newImage->height * 4];
+	char* highlightedChangesPixels = (char*)malloc(newImage->width * newImage->height * 4);
 	const size_t origin[3] = { 0, 0, 0 };
 	const size_t region[3] = { newImage->width, newImage->height, 1 };
 
@@ -386,31 +387,32 @@ void getOpenCLResults(ImageData* newImage, uint8_t* detectedChanges)
 
 	// ** Convert the output buffer into the FreeImage Format
 	FIBITMAP* image = FreeImage_ConvertFromRawBits(
-		(BYTE*)highlightedChangesPixels, 
-		newImage->width, 
+		(BYTE*)highlightedChangesPixels, newImage->width, 
 		newImage->height, 
 		newImage->width * 4, 
 		32,
 		0, 
 		0, 
 		0, 
-		false);
+		false
+	);
 
-	detectedChanges = (uint8_t *)highlightedChangesPixels;
-
-	delete[] highlightedChangesPixels;
+	free(highlightedChangesPixels);
+	// delete[] highlightedChangesPixels;
 	highlightedChangesPixels = NULL;
 
-	FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename("images/gpu_changes.png");
-	if (FreeImage_Save(format, image, "images/gpu_changes.png") == TRUE)
-		cout << endl << "GPU Image Saved" << endl;
+	if (FreeImage_Save(newImage->imageFormat, image, imageAddress.c_str()) == TRUE)
+		cout << endl << "Image Saved Successfully at " << imageAddress << endl;
 	else
-		cout << endl << "Failed to save image" << endl;
-	
-	// convertPixelArrToBitmap(detectedChanges, h_highlightedChangePixArr, size, true);
+	{
+		cerr << endl << "~~~~~~~~~~" << endl;
+		cerr << endl << "Can't save the file" << endl;
+		cerr << endl << "~~~~~~~~~~" << endl;
+		exit(EXIT_FAILURE);
+	}
 }
 
-void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges)
+void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *detectedChanges, string imageAddress)
 {
 	// Code
 	getOpenCLPlatforms();
@@ -429,7 +431,7 @@ void runOnGPU(ImageData *oldImage, ImageData *newImage, int threshold, uint8_t *
 
 	scheduleOpenCLKernel(oldImage, newImage);
 
-	getOpenCLResults(newImage, detectedChanges);
+	getOpenCLResults(newImage, imageAddress);
 
 	cleanup();
 }

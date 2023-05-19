@@ -32,8 +32,8 @@ void createOpenCLProgram(const char*);
 void createOpenCLImageStructure(ImageData*, ImageData*);
 void createOpenCLKernel(int);
 void scheduleOpenCLKernel(ImageData*, ImageData*);
-void getOpenCLResults(ImageData*, uint8_t*);
-void runOnGPU(ImageData*, ImageData*, int, uint8_t*);
+void getOpenCLResults(ImageData*, string);
+void runOnGPU(ImageData*, ImageData*, int, uint8_t*, string);
 void cleanup(void);
 
 // Utility Functions

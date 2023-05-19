@@ -114,12 +114,12 @@ void saveImage(FIBITMAP *dib, FREE_IMAGE_FORMAT imageFormat, string address)
 {
 	bool saved = FreeImage_Save(imageFormat, dib, address.c_str(), 0);
 
-	if(!saved)
+	if (!saved)
 	{
-		cout << endl << "~~~~~~~~~~" << endl;
-		perror("Can't save the file");
-		cout << endl << "~~~~~~~~~~" << endl;
-		exit(1);
+		cerr << endl << "~~~~~~~~~~" << endl;
+		cerr << endl << "Can't save the file" << endl;
+		cerr << endl << "~~~~~~~~~~" << endl;
+		exit(EXIT_FAILURE);
 	} 
 	
 	cout << endl << "Image Saved Successfully at " << address << endl;
@@ -138,7 +138,6 @@ void convertBitmapToPixelArr(Pixel *pixelArr, uint8_t *bitmap, size_t size)
 	}
 
 }
-
 
 void convertPixelArrToBitmap(uint8_t *bitmap, Pixel *pixelArr, size_t size)
 {

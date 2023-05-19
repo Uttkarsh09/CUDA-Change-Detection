@@ -281,7 +281,7 @@ void createOpenCLProgram(const char *kernelFileName)
 	}
 }
 
-void createOpenCLKernel(int threshold, int count)
+void createOpenCLKernel(int threshold)
 {
 	oclKernel = clCreateKernel(oclProgram, "oclChangeDetection", &result);
 	if (result != CL_SUCCESS)
